@@ -9,9 +9,10 @@ using namespace boost::icl;
 
 class BamRecord;
 class GffRecord;
+class MapElement;
+
 typedef boost::shared_ptr<BamRecord> BamRecordPtr;
 typedef boost::shared_ptr<GffRecord> GffRecordPtr;
-
 
 class BamRecord {
     public:
@@ -32,12 +33,18 @@ public:
 
 class MapElement {
 public:
-        set < GffRecordPtr > gtf_records;
-        // overload operator += to push_back
-    MapElement& operator+=(const MapElement& new_element) {
-        this->gtf_records.insert(new_element.gtf_records.begin(), new_element.gtf_records.end());
+    set < GffRecordPtr > gtf_records;
+
+    inline MapElement& operator+=(const MapElement& other_element) {
+        this->gtf_records.insert(other_element.gtf_records.begin(), other_element.gtf_records.end());
         return *this;
     }
+
+    inline bool operator==(const MapElement& other_element) const
+    {
+        return this->gtf_records == other_element.gtf_records;
+    }
+
 };
 
 
@@ -46,11 +53,12 @@ public:
 
 int main() {
 
+
     // read from BAM/SAM file to bam_records_input, save as a set of pointers
     set <BamRecordPtr> bam_records_input;
     // read from GFF/GFT file to gff_records_input
     set <GffRecordPtr> gff_records_input;
-    interval_map<size_t,MapElement> gtf_records_splitted;
+    interval_map<size_t, MapElement> gtf_records_splitted;
 
     for (std::set<GffRecordPtr>::iterator it = gff_records_input.begin(); it!=gff_records_input.end(); ++it){
         // create shared pointer from iterator and add it to set of pointers
@@ -58,7 +66,9 @@ int main() {
         temp_ptr = *it;
         MapElement current_map_element;
         current_map_element.gtf_records.insert(temp_ptr);
-        gtf_records_splitted += make_pair( interval<size_t>::closed((*it)->start_pose, (*it)->end_pose), current_map_element );
+        gtf_records_splitted.add( make_pair( interval<size_t>::closed( (*it)->start_pose, (*it)->end_pose ),
+                                            current_map_element )
+                                );
     }
 
 
