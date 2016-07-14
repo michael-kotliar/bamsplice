@@ -96,10 +96,6 @@ int main() {
                          temp_gtf_records_splitted_it->second.gtf_records.begin(),temp_gtf_records_splitted_it->second.gtf_records.end(),
                          std::inserter(gff_intersection, gff_intersection.begin()));
 
-        if (gff_intersection.empty()){
-            gff_intersection = current_gtf_records_splitted_it->second.gtf_records;
-        }
-
         // iterate over gff_intersection set and write correct read to each of the annotation
         for (set<GffRecordPtr>::iterator gff_it = gff_intersection.begin(); gff_it != gff_intersection.end(); ++gff_it){
             (*gff_it)->bam_records.push_back(*current_bam_record_it);
