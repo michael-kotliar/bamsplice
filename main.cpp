@@ -43,7 +43,7 @@ public:
         size_t end_pose;
         string exon_id;
         string isoform_id;
-        forward_list < BamRecordPtr > bam_records;
+        vector < BamRecordPtr > bam_records;
         size_t reads_count;
 
         GffRecord (size_t start, size_t end, string exon, string isoform)
@@ -144,6 +144,23 @@ void print_segment_annotation (const string & title, interval_map<size_t, MapEle
         cout << " " << (*start_segment_annotation_it)->exon_id;
     }
     cout << endl;
+}
+
+
+set<GffRecordPtr> get_intersection (interval_map<size_t, MapElement>::iterator input_1, interval_map<size_t, MapElement>::iterator input_2){
+    set<GffRecordPtr> intersection;
+    input_1->second.gtf_records.sort();
+    input_2->second.gtf_records.sort();
+    set_intersection(input_1->second.gtf_records.begin(),input_1->second.gtf_records.end(),
+                     input_2->second.gtf_records.begin(),input_2->second.gtf_records.end(),
+                     std::inserter(intersection, intersection.begin()));
+                cout << "   Intersection : ";
+                for (auto intersection_segment_annotation_it = intersection.begin();
+                     intersection_segment_annotation_it != intersection.end(); ++intersection_segment_annotation_it){
+                    cout << " " << (*intersection_segment_annotation_it)->exon_id;
+                }
+                cout << endl;
+    return intersection;
 }
 
 int main() {
@@ -265,24 +282,11 @@ int main() {
 
         // find intersection of two sets
 
-        set<GffRecordPtr> gff_intersection;
-        current_gtf_records_splitted_it->second.gtf_records.sort();
-        temp_gtf_records_splitted_it->second.gtf_records.sort();
-        set_intersection(current_gtf_records_splitted_it->second.gtf_records.begin(),current_gtf_records_splitted_it->second.gtf_records.end(),
-                         temp_gtf_records_splitted_it->second.gtf_records.begin(),temp_gtf_records_splitted_it->second.gtf_records.end(),
-                         std::inserter(gff_intersection, gff_intersection.begin()));
-
-                    cout << "   Intersection : ";
-                    for (auto intersection_segment_annotation_it = gff_intersection.begin();
-                         intersection_segment_annotation_it != gff_intersection.end(); ++intersection_segment_annotation_it){
-                        cout << " " << (*intersection_segment_annotation_it)->exon_id;
-                    }
-                    cout << endl;
-
+        set<GffRecordPtr> gff_intersection = get_intersection (current_gtf_records_splitted_it, temp_gtf_records_splitted_it);
 
         // iterate over gff_intersection set and write correct read to each of the annotation
         for (auto gff_it = gff_intersection.begin(); gff_it != gff_intersection.end(); ++gff_it){
-            (*gff_it)->bam_records.push_front(current_bam_record);
+            (*gff_it)->bam_records.push_back(current_bam_record);
             (*gff_it)->reads_count++;
             cout << "   into annotation " << (*gff_it)->exon_id << " added read " << current_bam_record->read_id << endl;
         }
