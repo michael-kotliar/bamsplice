@@ -262,6 +262,7 @@ int main() {
     size_t slice_number = 1;
     size_t current_slice = 1;
     std::map <string, set <GffRecordPtr> > iso_map; // isoform is a key
+    BamRecord previous_bam_record;
 
     while (get_bam_record (bam_records_input, current_bam_record, freeze)){ // Check if I can get new record from BAM file
         // Check if gtf records array is already empty. Exit if empty
@@ -274,10 +275,6 @@ int main() {
                                                current_bam_record->slices << endl;
 
         slice_number = current_bam_record->slices;
-
-
-
-
 
         // Find start segment annotation
 
@@ -296,10 +293,14 @@ int main() {
                     print_segment_annotation ("   stop segment annotation", temp_gtf_records_splitted_it);
 
 
-        // update the buckup for gff iterator
-        if (current_slice == 1){
-            backup_current_gtf_records_splitted_it = current_gtf_records_splitted_it;
+        // added just in case if didn't find start or stop segment annotation for 2nd, 3rd etc parts of the sliced read
+        if (previous_bam_record.read_id != current_bam_record->read_id){
+            current_slice = 1;
+            iso_map.clear();
+            backup_current_gtf_records_splitted_it = current_gtf_records_splitted_it; // update the buckup for gff iterator
+            cout << "map is cleared" << endl;
         }
+        previous_bam_record = *current_bam_record;
 
         // find intersection of two sets
 
@@ -322,7 +323,6 @@ int main() {
         current_slice++;
 
         if (current_slice > slice_number){
-            cout << "   c " << current_slice << " > " << slice_number << endl;
             for(auto map_iterator = iso_map.begin(); map_iterator != iso_map.end(); map_iterator++){
                 if (map_iterator->second.size() == slice_number){
                     for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it){
@@ -332,10 +332,7 @@ int main() {
                     }
                 }
             }
-            current_slice = 1;
-            iso_map.clear();
             current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it; // get iterator from the backup
-            cout << "map is cleared" << endl;
         }
 
         freeze = false;
