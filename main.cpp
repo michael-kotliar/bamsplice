@@ -20,17 +20,20 @@ public:
     size_t start_pose;
     size_t end_pose;
     string read_id;
+    short parts; // total ammount of parts if read is sliced
     // add other important fields
 
-    BamRecord (size_t start, size_t end, string read)
+    BamRecord (size_t start, size_t end, string read, short parts_number)
             : start_pose (start)
             , end_pose (end)
             , read_id (read)
+            , parts (parts_number)
     {}
     BamRecord ()
             : start_pose (0)
             , end_pose (0)
             , read_id ("")
+            , parts (1)
     {}
 };
 
@@ -80,33 +83,93 @@ public:
 };
 
 
+size_t last_bam_pose = 0;
+bool get_bam_record (const vector <BamRecordPtr> & bam_arr, BamRecordPtr & bam_record, bool freeze = false){
+    if (not freeze){
+        last_bam_pose++;
+    }
+    if (bam_arr.empty() or last_bam_pose > bam_arr.size()){
+        cout << "bam array is empty " << bam_arr.empty() << endl;
+        cout << last_bam_pose << " >= " << bam_arr.size() << endl;
+        return false;
+    }
+    if (last_bam_pose == 0){
+        bam_record = bam_arr [last_bam_pose];
+    } else
+        bam_record = bam_arr [last_bam_pose - 1];
+    return true;
+}
 
+bool find_start_segment_annotation (BamRecordPtr current_bam_record, interval_map<size_t, MapElement>::iterator & current_gtf_records_splitted_it, bool & freeze){
+    if (current_bam_record->start_pose < current_gtf_records_splitted_it->first.lower()) {
+        cout << "   Skip read " << current_bam_record->read_id << " [" <<
+        current_bam_record->start_pose << "," <<
+        current_bam_record->end_pose << "]" << endl;
+        freeze = false; // Set freeze to false to change current_bam_record
+        return false;
+    }
+
+    if (current_bam_record->start_pose >= current_gtf_records_splitted_it->first.upper()) {
+        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
+        cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
+        << current_gtf_records_splitted_it->first.upper() << "]" << endl;
+        current_gtf_records_splitted_it++;
+        freeze = true; // Set freeze to true to prevent changing current_bam_record
+        return false;
+    }
+    return true;
+}
+
+bool find_stop_segment_annotation (BamRecordPtr current_bam_record,
+                                   interval_map<size_t,MapElement>::iterator & temp_gtf_records_splitted_it,
+                                   interval_map<size_t,MapElement>::iterator max_segment_annotation,
+                                   bool & freeze){
+    while (current_bam_record->end_pose < temp_gtf_records_splitted_it->first.lower() or
+           current_bam_record->end_pose > temp_gtf_records_splitted_it->first.upper()){
+        // check if we reached the end of the gtf_records array. If true, change go to the next bam_record
+        if (temp_gtf_records_splitted_it == max_segment_annotation){
+            freeze = false;
+            return false;
+        }
+        temp_gtf_records_splitted_it++;
+    }
+    return true;
+}
+
+void print_segment_annotation (const string & title, interval_map<size_t, MapElement>::iterator current_gtf_records_splitted_it){
+    cout << title << " " << "[" << current_gtf_records_splitted_it->first.lower() << ","
+    << current_gtf_records_splitted_it->first.upper() << "] :";
+    for (auto start_segment_annotation_it = current_gtf_records_splitted_it->second.gtf_records.begin();
+         start_segment_annotation_it != current_gtf_records_splitted_it->second.gtf_records.end(); ++start_segment_annotation_it){
+        cout << " " << (*start_segment_annotation_it)->exon_id;
+    }
+    cout << endl;
+}
 
 int main() {
     // read from BAM/SAM file to bam_records_input, save as a set of pointers
-    forward_list <BamRecordPtr> bam_records_input;
+    vector <BamRecordPtr> bam_records_input;
 
             // FOR TESTING ONLY
             // Should be sorted according to the start position
 
-            BamRecordPtr r1 (new BamRecord (12,15, "1"));
-            BamRecordPtr r2 (new BamRecord (14,21, "2"));
-//            BamRecordPtr r3 (new BamRecord (17,20, "6"));
-            BamRecordPtr r4 (new BamRecord (22,33, "3"));
-            BamRecordPtr r5 (new BamRecord (22,45, "4"));
-//            BamRecordPtr r6 (new BamRecord (22,25, "6"));
-            BamRecordPtr r7 (new BamRecord (40,45, "5"));
+            BamRecordPtr r1 (new BamRecord (12,15, "1", 1));
+            BamRecordPtr r2 (new BamRecord (14,21, "2", 1));
+//            BamRecordPtr r3 (new BamRecord (17,20, "6", 2));
+//            BamRecordPtr r6 (new BamRecord (22,25, "6", 2));
+            BamRecordPtr r4 (new BamRecord (22,33, "3", 1));
+            BamRecordPtr r5 (new BamRecord (22,45, "4", 1));
+            BamRecordPtr r7 (new BamRecord (40,45, "5", 1));
 
-            bam_records_input.push_front(r1);
-            bam_records_input.push_front(r2);
-//            bam_records_input.push_front(r3);
-            bam_records_input.push_front(r4);
-            bam_records_input.push_front(r5);
-//            bam_records_input.push_front(r6);
-            bam_records_input.push_front(r7);
+            bam_records_input.push_back(r1);
+            bam_records_input.push_back(r2);
+//            bam_records_input.push_back(r3);
+//            bam_records_input.push_back(r6);
+            bam_records_input.push_back(r4);
+            bam_records_input.push_back(r5);
+            bam_records_input.push_back(r7);
 
     cout << "READS" << endl;
-    bam_records_input.reverse();
     for (auto bam_record_it = bam_records_input.begin(); bam_record_it != bam_records_input.end(); ++bam_record_it){
         cout << (*bam_record_it)->read_id << " - [" << (*bam_record_it)->start_pose << "," << (*bam_record_it)->end_pose << "]" << endl;
     }
@@ -169,55 +232,34 @@ int main() {
     }
     cout << endl;
 
-    forward_list<BamRecordPtr>::iterator current_bam_record_it = bam_records_input.begin();
     interval_map<size_t, MapElement>::iterator current_gtf_records_splitted_it = gtf_records_splitted.begin();
 
-    while (current_bam_record_it != bam_records_input.end() and current_gtf_records_splitted_it != gtf_records_splitted.end()){
-        cout << "Process read " << (*current_bam_record_it)->read_id << " [" <<
-                (*current_bam_record_it)->start_pose << "," <<
-                (*current_bam_record_it)->end_pose << "]" << endl;
-        if ((*current_bam_record_it)->start_pose < current_gtf_records_splitted_it->first.lower()) {
-            cout << "   Skip read " << (*current_bam_record_it)->read_id << " [" <<
-                                       (*current_bam_record_it)->start_pose << "," <<
-                                       (*current_bam_record_it)->end_pose << "]" << endl;
-            current_bam_record_it++;
+
+
+    BamRecordPtr current_bam_record;
+    bool freeze = false;
+    while (get_bam_record (bam_records_input, current_bam_record, freeze)){ // Check if I can get new record from BAM file
+        // Check if gtf records array is already empty. Exit if empty
+        if (current_gtf_records_splitted_it == gtf_records_splitted.end()) break;
+
+                    cout << "Process read " << current_bam_record->read_id << " [" <<
+                                               current_bam_record->start_pose << "," <<
+                                               current_bam_record->end_pose << "]" << endl;
+
+        // Find start segment annotation
+        if (not find_start_segment_annotation (current_bam_record, current_gtf_records_splitted_it, freeze))
             continue;
-        }
-        if ((*current_bam_record_it)->start_pose >= current_gtf_records_splitted_it->first.upper()) {
-            cout << (*current_bam_record_it)->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
-            cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
-                                                  << current_gtf_records_splitted_it->first.upper() << "]" << endl;
-            current_gtf_records_splitted_it++;
-            continue;
-        }
+
+                    print_segment_annotation ("start segment annotation", current_gtf_records_splitted_it);
+
+
+
+        // Find stop segment annotation
         interval_map<size_t, MapElement>::iterator temp_gtf_records_splitted_it = current_gtf_records_splitted_it;
-        cout << "   start segment annotation " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
-                                               << current_gtf_records_splitted_it->first.upper() << "] :";
+        if (not find_stop_segment_annotation (current_bam_record, temp_gtf_records_splitted_it, gtf_records_splitted.end(), freeze) )
+            continue;
 
-        for (auto start_segment_annotation_it = current_gtf_records_splitted_it->second.gtf_records.begin();
-             start_segment_annotation_it != current_gtf_records_splitted_it->second.gtf_records.end(); ++start_segment_annotation_it){
-            cout << " " << (*start_segment_annotation_it)->exon_id;
-        }
-        cout << endl;
-
-        while ((*current_bam_record_it)->end_pose < temp_gtf_records_splitted_it->first.lower() or
-                (*current_bam_record_it)->end_pose > temp_gtf_records_splitted_it->first.upper()){
-            // find our closing annotation for current read
-            if (temp_gtf_records_splitted_it == gtf_records_splitted.end()){
-                current_bam_record_it++;
-                continue;
-            }
-            temp_gtf_records_splitted_it++;
-        }
-
-        cout << "   stop segment annotation " << "[" <<  temp_gtf_records_splitted_it->first.lower() << ","
-        << temp_gtf_records_splitted_it->first.upper() << "] :";
-
-        for (auto stop_segment_annotation_it = temp_gtf_records_splitted_it->second.gtf_records.begin();
-             stop_segment_annotation_it != temp_gtf_records_splitted_it->second.gtf_records.end(); ++stop_segment_annotation_it){
-            cout << " " << (*stop_segment_annotation_it)->exon_id;
-        }
-        cout << endl;
+                    print_segment_annotation ("stop segment annotation", temp_gtf_records_splitted_it);
 
 
 
@@ -230,23 +272,22 @@ int main() {
                          temp_gtf_records_splitted_it->second.gtf_records.begin(),temp_gtf_records_splitted_it->second.gtf_records.end(),
                          std::inserter(gff_intersection, gff_intersection.begin()));
 
-        cout << "   Intersection : ";
-        for (auto intersection_segment_annotation_it = gff_intersection.begin();
-             intersection_segment_annotation_it != gff_intersection.end(); ++intersection_segment_annotation_it){
-            cout << " " << (*intersection_segment_annotation_it)->exon_id;
-        }
-        cout << endl;
+                    cout << "   Intersection : ";
+                    for (auto intersection_segment_annotation_it = gff_intersection.begin();
+                         intersection_segment_annotation_it != gff_intersection.end(); ++intersection_segment_annotation_it){
+                        cout << " " << (*intersection_segment_annotation_it)->exon_id;
+                    }
+                    cout << endl;
 
 
         // iterate over gff_intersection set and write correct read to each of the annotation
         for (auto gff_it = gff_intersection.begin(); gff_it != gff_intersection.end(); ++gff_it){
-            (*gff_it)->bam_records.push_front(*current_bam_record_it);
+            (*gff_it)->bam_records.push_front(current_bam_record);
             (*gff_it)->reads_count++;
-            cout << "   into annotation " << (*gff_it)->exon_id << " added read " << (*current_bam_record_it)->read_id << endl;
+            cout << "   into annotation " << (*gff_it)->exon_id << " added read " << current_bam_record->read_id << endl;
         }
 
-        current_bam_record_it++;
-
+        freeze = false;
 
     }
 //
