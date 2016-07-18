@@ -2,6 +2,7 @@
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <set>
+#include <map>
 #include <forward_list>
 #include <boost/icl/interval_map.hpp>
 
@@ -20,20 +21,20 @@ public:
     size_t start_pose;
     size_t end_pose;
     string read_id;
-    short parts; // total ammount of parts if read is sliced
+    short slices; // total ammount of parts if read is sliced
     // add other important fields
 
     BamRecord (size_t start, size_t end, string read, short parts_number)
             : start_pose (start)
             , end_pose (end)
             , read_id (read)
-            , parts (parts_number)
+            , slices (parts_number)
     {}
     BamRecord ()
             : start_pose (0)
             , end_pose (0)
             , read_id ("")
-            , parts (1)
+            , slices (1)
     {}
 };
 
@@ -81,6 +82,8 @@ public:
     }
 
 };
+
+
 
 
 size_t last_bam_pose = 0;
@@ -172,16 +175,16 @@ int main() {
 
             BamRecordPtr r1 (new BamRecord (12,15, "1", 1));
             BamRecordPtr r2 (new BamRecord (14,21, "2", 1));
-//            BamRecordPtr r3 (new BamRecord (17,20, "6", 2));
-//            BamRecordPtr r6 (new BamRecord (22,25, "6", 2));
+            BamRecordPtr r3 (new BamRecord (17,20, "6", 2));
+            BamRecordPtr r6 (new BamRecord (22,25, "6", 2));
             BamRecordPtr r4 (new BamRecord (22,33, "3", 1));
             BamRecordPtr r5 (new BamRecord (22,45, "4", 1));
             BamRecordPtr r7 (new BamRecord (40,45, "5", 1));
 
             bam_records_input.push_back(r1);
             bam_records_input.push_back(r2);
-//            bam_records_input.push_back(r3);
-//            bam_records_input.push_back(r6);
+            bam_records_input.push_back(r3);
+            bam_records_input.push_back(r6);
             bam_records_input.push_back(r4);
             bam_records_input.push_back(r5);
             bam_records_input.push_back(r7);
@@ -255,19 +258,27 @@ int main() {
 
     BamRecordPtr current_bam_record;
     bool freeze = false;
+    size_t slice_number = 1;
+    size_t current_slice = 1;
+    std::map <string, set <GffRecordPtr> > iso_map; // isoform is a key
+
     while (get_bam_record (bam_records_input, current_bam_record, freeze)){ // Check if I can get new record from BAM file
         // Check if gtf records array is already empty. Exit if empty
+        cout << endl;
         if (current_gtf_records_splitted_it == gtf_records_splitted.end()) break;
 
                     cout << "Process read " << current_bam_record->read_id << " [" <<
                                                current_bam_record->start_pose << "," <<
-                                               current_bam_record->end_pose << "]" << endl;
+                                               current_bam_record->end_pose << "] - " <<
+                                               current_bam_record->slices << endl;
+
+        slice_number = current_bam_record->slices;
 
         // Find start segment annotation
         if (not find_start_segment_annotation (current_bam_record, current_gtf_records_splitted_it, freeze))
             continue;
 
-                    print_segment_annotation ("start segment annotation", current_gtf_records_splitted_it);
+                    print_segment_annotation ("   start segment annotation", current_gtf_records_splitted_it);
 
 
 
@@ -276,7 +287,7 @@ int main() {
         if (not find_stop_segment_annotation (current_bam_record, temp_gtf_records_splitted_it, gtf_records_splitted.end(), freeze) )
             continue;
 
-                    print_segment_annotation ("stop segment annotation", temp_gtf_records_splitted_it);
+                    print_segment_annotation ("   stop segment annotation", temp_gtf_records_splitted_it);
 
 
 
@@ -284,25 +295,50 @@ int main() {
 
         set<GffRecordPtr> gff_intersection = get_intersection (current_gtf_records_splitted_it, temp_gtf_records_splitted_it);
 
-        // iterate over gff_intersection set and write correct read to each of the annotation
+
         for (auto gff_it = gff_intersection.begin(); gff_it != gff_intersection.end(); ++gff_it){
-            (*gff_it)->bam_records.push_back(current_bam_record);
-            (*gff_it)->reads_count++;
-            cout << "   into annotation " << (*gff_it)->exon_id << " added read " << current_bam_record->read_id << endl;
+            set <GffRecordPtr> temp_set;
+            temp_set.insert ((*gff_it));
+            pair < std::map <string, set <GffRecordPtr> >::iterator, bool > ret;
+            pair < string, set <GffRecordPtr> > input_pair ( (*gff_it)->isoform_id, temp_set);
+            ret = iso_map.insert (input_pair);
+            if (ret.second == false) {
+                cout << "Isoform " << input_pair.first << " already exists" << endl;
+                cout << "Updating the set with a value " << (*gff_it)->exon_id << endl;
+                ret.first->second.insert(temp_set.begin(), temp_set.end());
+            }
+        }
+
+        current_slice++;
+
+        if (current_slice > slice_number){
+            cout << "   c " << current_slice << " > " << slice_number << endl;
+            for(auto map_iterator = iso_map.begin(); map_iterator != iso_map.end(); map_iterator++){
+                if (map_iterator->second.size() == slice_number){
+                    for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it){
+                        (*gff_it)->bam_records.push_back(current_bam_record);
+                        (*gff_it)->reads_count++;
+                        cout << "   into annotation " << (*gff_it)->exon_id << " added read " << current_bam_record->read_id << endl;
+                    }
+                }
+            }
+            current_slice = 1;
+            iso_map.clear();
+            cout << "map is cleared" << endl;
         }
 
         freeze = false;
 
     }
 //
-            // FOR TESTING ONLY
-            for (auto it = gff_records_input.begin(); it!=gff_records_input.end(); ++it){
-                cout << "Annotation "<< (*it)->exon_id << " : ";
-                for (auto bam_record_it = (*it)->bam_records.begin(); bam_record_it != (*it)->bam_records.end(); ++bam_record_it){
-                    cout << (*bam_record_it)->read_id << " ";
-                }
-                cout << endl;
-            }
+                    // FOR TESTING ONLY
+                    for (auto it = gff_records_input.begin(); it!=gff_records_input.end(); ++it){
+                        cout << "Annotation "<< (*it)->exon_id << " : ";
+                        for (auto bam_record_it = (*it)->bam_records.begin(); bam_record_it != (*it)->bam_records.end(); ++bam_record_it){
+                            cout << (*bam_record_it)->read_id << " ";
+                        }
+                        cout << endl;
+                    }
 
 
 
