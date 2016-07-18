@@ -176,7 +176,7 @@ int main() {
             BamRecordPtr r1 (new BamRecord (12,15, "1", 1));
             BamRecordPtr r2 (new BamRecord (14,21, "2", 1));
             BamRecordPtr r3 (new BamRecord (17,20, "6", 2));
-            BamRecordPtr r6 (new BamRecord (22,25, "6", 2));
+            BamRecordPtr r6 (new BamRecord (40,45, "6", 2));
             BamRecordPtr r4 (new BamRecord (22,33, "3", 1));
             BamRecordPtr r5 (new BamRecord (22,45, "4", 1));
             BamRecordPtr r7 (new BamRecord (40,45, "5", 1));
@@ -253,6 +253,7 @@ int main() {
     cout << endl;
 
     interval_map<size_t, MapElement>::iterator current_gtf_records_splitted_it = gtf_records_splitted.begin();
+    interval_map<size_t, MapElement>::iterator backup_current_gtf_records_splitted_it = gtf_records_splitted.begin();
 
 
 
@@ -274,7 +275,12 @@ int main() {
 
         slice_number = current_bam_record->slices;
 
+
+
+
+
         // Find start segment annotation
+
         if (not find_start_segment_annotation (current_bam_record, current_gtf_records_splitted_it, freeze))
             continue;
 
@@ -290,6 +296,10 @@ int main() {
                     print_segment_annotation ("   stop segment annotation", temp_gtf_records_splitted_it);
 
 
+        // update the buckup for gff iterator
+        if (current_slice == 1){
+            backup_current_gtf_records_splitted_it = current_gtf_records_splitted_it;
+        }
 
         // find intersection of two sets
 
@@ -324,6 +334,7 @@ int main() {
             }
             current_slice = 1;
             iso_map.clear();
+            current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it; // get iterator from the backup
             cout << "map is cleared" << endl;
         }
 
