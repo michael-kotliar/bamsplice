@@ -1,0 +1,10 @@
+1. Create class which will hold the map, where
+	key - isoform id
+	value - sorted list of annotation from the same isoform
+2. Put there map for saving results (the same as we have now iso_map)
+3. In class after adding of each annotation pointer check if it is equal to pointer that is next for current isoform
+	You need to save previous iterators for each of the isoform and on the base of this compare current
+	annotation pointer with the following in the sorted list
+4. When the current annotation pointer is not the following in the list for its isoform, we don't put it in iso_map
+
+THIS IS THE BASIC IDEA HOW TO MAKE CHECK IF TWO OR MORE ANNOTATION FROM THE SAME ISOFORM FOLLOWS EACH OTHER WITHOUT SPACES
