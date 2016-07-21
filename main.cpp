@@ -45,6 +45,19 @@ public:
             , read_id ("")
             , slices (1)
     {}
+
+    BamRecord (const BamAlignment & current_alignment)
+            : start_pose (current_alignment.Position)
+            , end_pose (current_alignment.GetEndPosition())
+            , read_id (current_alignment.Name)
+            , slices (1) // TODO calculate slices on the base of CIGAR data
+    {}
+
+    void print (){
+        cout << "Read_id: " << read_id << endl;
+        cout << "[start, end]: [" << start_pose << ", " << end_pose << "]" << endl;
+        cout << "number of parts: " << slices << endl;
+    }
 };
 
 class GffRecord {
@@ -101,22 +114,19 @@ public:
 
 
 
-long last_bam_pose = 0; // only for function get_bam_record to save the last index of the bam record from input array
 // This function should be upfated to the similar one when we load the real bam/sam file
-bool get_bam_record (const vector <BamRecordPtr> & bam_arr, BamRecordPtr & bam_record, bool freeze = false){
-    if (not freeze){
-        last_bam_pose++;
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze = false){
+    if (freeze and bam_record){
+        return true;
     }
-    if (bam_arr.empty() or last_bam_pose > bam_arr.size()){
-        cout << "bam array is empty " << bam_arr.empty() << endl;
-        cout << last_bam_pose << " >= " << bam_arr.size() << endl;
+    BamAlignment current_alignment;
+    if (bam_reader.GetNextAlignment(current_alignment)){
+        bam_record.reset(new BamRecord(current_alignment));
+        return true;
+    } else {
+        bam_record.reset();
         return false;
     }
-    if (last_bam_pose == 0){
-        bam_record = bam_arr [last_bam_pose];
-    } else
-        bam_record = bam_arr [last_bam_pose - 1];
-    return true;
 }
 
 // Updates iterator current_gtf_records_splitted_it for the interval map segment which includes the starting position of the current_bam_read
@@ -533,6 +543,7 @@ int main() {
 
     // read from BAM/SAM file to bam_records_input, save as a set of pointers
     string bam_full_path_name = "/Users/kot4or/ClionProjects/test_1/bam_ex_1.bam";
+//    string bam_full_path_name = "/Users/kot4or/ClionProjects/samtools_primer/tutorial/alignments/sim_reads_aligned.bam";
     BamReader bam_reader;
     if (not bam_reader.Open(bam_full_path_name)) {
         cout << "Couldn't open file " << bam_full_path_name << endl;
@@ -541,27 +552,27 @@ int main() {
 
 
     // Should be sorted according to the start position
-    vector <BamRecordPtr> bam_records_input;
-    BamRecordPtr r1 (new BamRecord (12,15, "1", 1));
-    BamRecordPtr r2 (new BamRecord (14,21, "2", 1));
-    BamRecordPtr r3 (new BamRecord (17,20, "6", 2));
-    BamRecordPtr r6 (new BamRecord (36,45, "6", 2));
-    BamRecordPtr r4 (new BamRecord (22,33, "3", 1));
-    BamRecordPtr r5 (new BamRecord (22,45, "4", 1));
-    BamRecordPtr r7 (new BamRecord (40,45, "5", 1));
-    bam_records_input.push_back(r1);
-    bam_records_input.push_back(r2);
-    bam_records_input.push_back(r3);
-    bam_records_input.push_back(r6);
-    bam_records_input.push_back(r4);
-    bam_records_input.push_back(r5);
-    bam_records_input.push_back(r7);
+//    vector <BamRecordPtr> bam_records_input;
+//    BamRecordPtr r1 (new BamRecord (12,15, "1", 1));
+//    BamRecordPtr r2 (new BamRecord (14,21, "2", 1));
+//    BamRecordPtr r3 (new BamRecord (17,20, "6", 2));
+//    BamRecordPtr r6 (new BamRecord (36,45, "6", 2));
+//    BamRecordPtr r4 (new BamRecord (22,33, "3", 1));
+//    BamRecordPtr r5 (new BamRecord (22,45, "4", 1));
+//    BamRecordPtr r7 (new BamRecord (40,45, "5", 1));
+//    bam_records_input.push_back(r1);
+//    bam_records_input.push_back(r2);
+//    bam_records_input.push_back(r3);
+//    bam_records_input.push_back(r6);
+//    bam_records_input.push_back(r4);
+//    bam_records_input.push_back(r5);
+//    bam_records_input.push_back(r7);
 
     // FOR DEBUG USE ONLY
-    cout << "READS" << endl;
-    for (auto bam_record_it = bam_records_input.begin(); bam_record_it != bam_records_input.end(); ++bam_record_it){
-        cout << (*bam_record_it)->read_id << " - [" << (*bam_record_it)->start_pose << "," << (*bam_record_it)->end_pose << "]" << endl;
-    }
+//    cout << "READS" << endl;
+//    for (auto bam_record_it = bam_records_input.begin(); bam_record_it != bam_records_input.end(); ++bam_record_it){
+//        cout << (*bam_record_it)->read_id << " - [" << (*bam_record_it)->start_pose << "," << (*bam_record_it)->end_pose << "]" << endl;
+//    }
 
     // read from tab delimited file
     string annotation_full_path_name = "/Users/kot4or/ClionProjects/test_1/tab_del_ex_1";
@@ -652,7 +663,8 @@ int main() {
         std::map<string, set<GffRecordPtr> > iso_map; // map to arrange annotation according to the isoform key
         BamRecord previous_bam_record; // temporal pointer to bam record to detect the moment when next bam record isn't a part of big scpliced read
 
-        while (get_bam_record(bam_records_input, current_bam_record,
+
+        while (get_bam_record(bam_reader, current_bam_record,
                               freeze)) { // Check if I can get new record from BAM file
             // Check if gtf records array is already empty. Break the while loop
             if (current_gtf_records_splitted_it == gtf_records_splitted.end()) break;
