@@ -131,7 +131,7 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, interval_ma
         return false;
     }
     if (current_bam_record->start_pose >= current_gtf_records_splitted_it->first.upper()) {
-        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
+//        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
         cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
         << current_gtf_records_splitted_it->first.upper() << "]" << endl;
         current_gtf_records_splitted_it++;
@@ -182,7 +182,7 @@ set<GffRecordPtr> get_intersection (interval_map<long, MapElement>::iterator inp
                 cout << "   Intersection : ";
                 for (auto intersection_segment_annotation_it = intersection.begin();
                      intersection_segment_annotation_it != intersection.end(); ++intersection_segment_annotation_it){
-                    cout << " " << (*intersection_segment_annotation_it)->exon_id;
+                    cout << " " << (*intersection_segment_annotation_it)->exon_id << " ("<< (*intersection_segment_annotation_it)->isoform_id << "), ";
                 }
                 cout << endl;
     return intersection;
@@ -327,7 +327,7 @@ bool str_to_int(int &var, const string &value){
 }
 
 bool str_array_to_long_ptr_array(const vector<string> &input, vector<boost::shared_ptr<long> > &output){
-    for (int i = 1; i < input.size(); i++){
+    for (int i = 0; i < input.size(); i++){
         boost::shared_ptr <long> temp;
         if (not str_to_long_ptr(temp, input[i])){
             return false;
@@ -339,7 +339,7 @@ bool str_array_to_long_ptr_array(const vector<string> &input, vector<boost::shar
 
 
 bool str_array_to_long_array(const vector<string> &input, vector<long> &output){
-    for (int i = 1; i < input.size(); i++){
+    for (int i = 0; i < input.size(); i++){
         long temp;
         try {
             temp = boost::lexical_cast<long>(input[i]);
@@ -351,6 +351,13 @@ bool str_array_to_long_array(const vector<string> &input, vector<long> &output){
         output.push_back(temp);
     }
     return true;
+}
+
+void print_vector (const vector <string> & in, string title = ""){
+    cout << title << endl;
+    for (int i = 0; i < in.size(); i++){
+        cout << i <<") " << in[i] << endl;
+    }
 }
 
 class Isoform {
@@ -374,6 +381,25 @@ public:
     cds_stat cds_start_stat; // 13
     cds_stat cds_end_stat; // 14
 
+    void print (){
+        cout << "isoform: " << name << endl;
+        cout << "chrom: " << chrom << endl;
+        cout << "strand: " << strand << endl;
+        cout << "[tx_start, tx_end]: [" << tx_start << ", " << tx_end << "]" << endl;
+        cout << "[cds_start, cds_end]: [" << cds_start << ", " << cds_end << "]" << endl;
+        cout << "exon_count: " << exon_count << endl;
+        cout << "exon_starts.size(): " << exon_starts.size() << endl;
+        cout << "exon_ends.size(): " << exon_ends.size() << endl;
+        cout << "exon_frames.size(): " << exon_frames.size() << endl;
+        cout << "Exons:" << endl;
+        for (int i = 0; i < exon_count; i++){
+            cout << "  " << i << ") " << "[" << exon_starts[i] << ", "<< exon_ends[i] << "] - " << exon_frames[i] << endl;
+        }
+        cout << "score: " << score << endl;
+        cout << "name2: " << name2 << endl;
+        cout << "cds_start_stat: " << cds_start_stat << endl;
+        cout << "cds_end_stat: " << cds_end_stat << endl;
+    }
 
     Isoform (string line){
         vector<string> line_splitted = string_tools::split_line(line);
@@ -439,6 +465,11 @@ public:
         vector<string> exon_ends_str = string_tools::split_line(line_splitted[10], ",");
         vector<string> exon_frames_str = string_tools::split_line(line_splitted[15], ",");
 
+//        print_vector (exon_starts_str, "exon_starts_str");
+//        print_vector(exon_ends_str, "exon_ends_str");
+//        print_vector(exon_frames_str, "exon_frames_str");
+
+
         if (not str_array_to_long_array(exon_starts_str, exon_starts)){
             throw ("Isoform class constructor fail");
         };
@@ -464,13 +495,13 @@ bool load_annotation (const string & full_path_name, std::map <string, multimap 
         return false;
     }
     string line;
-    std::map <string, forward_list <GffRecord> > global_annotation_map;
     while (getline(input_stream, line)) {
         if (string_tools::include_key(line, "name")) {
             continue;
         }
 
         Isoform current_isoform(line);
+//        current_isoform.print();
 
         for (int i = 0; i < current_isoform.exon_count; i++){
             stringstream ss;
@@ -529,9 +560,6 @@ int main() {
         return 0;
     }
 
-    cout << "file is succesfully loaded" << endl;
-
-
 
 //    forward_list <GffRecordPtr> gff_records_input;
 //    GffRecordPtr a1 (new GffRecord (10,20, "1" , "iso_1"));
@@ -589,9 +617,8 @@ int main() {
         cout << "GENERATE INTERVAL MAP" << endl;
         for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
             cout << "[" << temp_it->first.lower() << "," << temp_it->first.upper() << "]" << " : ";
-            for (auto it = temp_it->second.gtf_records.begin();
-                 it != temp_it->second.gtf_records.end(); ++it) {
-                cout << (*it)->exon_id << " ";
+            for (auto it = temp_it->second.gtf_records.begin(); it != temp_it->second.gtf_records.end(); ++it) {
+                cout << (*it)->exon_id << " (" << (*it)->isoform_id << "), ";
             }
             cout << endl;
         }
@@ -701,7 +728,7 @@ int main() {
                              gff_it != map_iterator->second.end(); ++gff_it) {
                             (*gff_it)->bam_records.push_back(current_bam_record);
                             (*gff_it)->reads_count++;
-                            cout << "   into annotation " << (*gff_it)->exon_id << " added read " <<
+                            cout << "   into annotation " << (*gff_it)->exon_id << " from " << (*gff_it)->isoform_id << " added read " <<
                             current_bam_record->read_id << endl;
                         }
                     }
@@ -727,13 +754,15 @@ int main() {
 
     // FOR DEBUG USE ONLY
 
+    cout << endl << "RESULTS" << endl;
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
         for (auto start_it = chrom_it->second.begin(); start_it!=chrom_it->second.end(); ++start_it){
-            cout << (*start_it->second).exon_id  << " " << (*start_it->second).isoform_id << " - [";
-            cout << (*start_it->second).start_pose << "," << (*start_it->second).end_pose << "]" << endl;
+            cout << "exon " << (*start_it->second).exon_id  << " from " << (*start_it->second).isoform_id << " - [";
+            cout << (*start_it->second).start_pose << "," << (*start_it->second).end_pose << "]" << " : ";
             for (auto bam_record_it = (*start_it->second).bam_records.begin(); bam_record_it != (*start_it->second).bam_records.end(); ++bam_record_it){
                 cout << (*bam_record_it)->read_id << " ";
             }
+            cout << endl;
         }
     }
 
