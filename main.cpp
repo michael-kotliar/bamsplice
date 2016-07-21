@@ -14,6 +14,7 @@
 
 using namespace std;
 using namespace boost::icl;
+using namespace BamTools;
 
 class BamRecord;
 class GffRecord;
@@ -531,6 +532,14 @@ bool load_annotation (const string & full_path_name, std::map <string, multimap 
 int main() {
 
     // read from BAM/SAM file to bam_records_input, save as a set of pointers
+    string bam_full_path_name = "/Users/kot4or/ClionProjects/test_1/bam_ex_1.bam";
+    BamReader bam_reader;
+    if (not bam_reader.Open(bam_full_path_name)) {
+        cout << "Couldn't open file " << bam_full_path_name << endl;
+        return 0;
+    } else cout << "Open " << bam_reader.GetFilename() << endl;
+
+
     // Should be sorted according to the start position
     vector <BamRecordPtr> bam_records_input;
     BamRecordPtr r1 (new BamRecord (12,15, "1", 1));
@@ -554,13 +563,17 @@ int main() {
         cout << (*bam_record_it)->read_id << " - [" << (*bam_record_it)->start_pose << "," << (*bam_record_it)->end_pose << "]" << endl;
     }
 
-    // read from GFF/GFT file to gff_records_input
-    string full_path_name = "/Users/kot4or/ClionProjects/test_1/tab_del_ex_1";
+    // read from tab delimited file
+    string annotation_full_path_name = "/Users/kot4or/ClionProjects/test_1/tab_del_ex_1";
     std::map <string, multimap <long, GffRecordPtr> > global_annotation_map_ptr;
 
-    if (not load_annotation (full_path_name, global_annotation_map_ptr)){
+    if (not load_annotation (annotation_full_path_name, global_annotation_map_ptr)){
         return 0;
     }
+
+
+
+
 
 
 //    forward_list <GffRecordPtr> gff_records_input;
