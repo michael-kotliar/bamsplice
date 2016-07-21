@@ -9,6 +9,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "include/api/BamReader.h"
+#include "include/api/BamMultiReader.h"
 
 using namespace std;
 using namespace boost::icl;
@@ -741,14 +743,6 @@ int main() {
             freeze = false;
 
         }
-
-//        for (auto it = gff_records_input.begin(); it != gff_records_input.end(); ++it) {
-//            cout << "Annotation " << (*it)->exon_id << " : ";
-//            for (auto bam_record_it = (*it)->bam_records.begin(); bam_record_it != (*it)->bam_records.end(); ++bam_record_it) {
-//                cout << (*bam_record_it)->read_id << " ";
-//            }
-//            cout << endl;
-//        }
 
     }
 
