@@ -46,13 +46,6 @@ public:
             , slices (1)
     {}
 
-    BamRecord (const BamAlignment & current_alignment)
-            : start_pose (current_alignment.Position)
-            , end_pose (current_alignment.GetEndPosition())
-            , read_id (current_alignment.Name)
-            , slices (1) // TODO calculate slices on the base of CIGAR data
-    {}
-
     void print (){
         cout << "Read_id: " << read_id << endl;
         cout << "[start, end]: [" << start_pose << ", " << end_pose << "]" << endl;
@@ -113,15 +106,60 @@ public:
 
 
 
+list <BamRecordPtr> saved_reads; // save all of single reads, which we got from the spliced read
+list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment){
+    // Parse CIGAR
+    // If splice read - add all of them into array
+    // NOTE we need to put it in that list in a right order. use push_back
+    list <BamRecordPtr> single_read_array;
+    vector<CigarOp> cigar_data = current_alignment.CigarData;
+    long start_pose = current_alignment.Position;
+    string read_id = current_alignment.Name;
+    int slices = 1;
+    for (int i = 0; i < cigar_data.size(); i++){
+        if (cigar_data[i].Type == 'N'){
+            slices++;
+        }
+    }
+    int shift = 0;
+    for (int i = 0; i < cigar_data.size(); i++){
+        if (cigar_data[i].Type == 'M' or
+            cigar_data[i].Type == 'I' or
+            cigar_data[i].Type == 'S' or
+            cigar_data[i].Type == '=' or
+            cigar_data[i].Type == 'X'){
+            shift += cigar_data[i].Length;
+        } else {
+            BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices));
+            single_read_array.push_back(single_read);
+            start_pose += shift;
+            if (cigar_data[i].Type == 'N'){
+                start_pose += cigar_data[i].Length;
+            }
+            shift = 0;
+        }
+    }
+    BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices));
+    single_read_array.push_back(single_read);
+    return single_read_array;
+}
 
 // This function should be upfated to the similar one when we load the real bam/sam file
 bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze = false){
     if (freeze and bam_record){
         return true;
     }
+    // try to get from the previously stored list (works in case of spliced reads)
+    if (not saved_reads.empty()){
+        bam_record = saved_reads.front();
+        saved_reads.pop_front();
+        return true;
+    }
     BamAlignment current_alignment;
     if (bam_reader.GetNextAlignment(current_alignment)){
-        bam_record.reset(new BamRecord(current_alignment));
+        saved_reads = split_to_single_reads (current_alignment);
+        bam_record = saved_reads.front();
+        saved_reads.pop_front();
         return true;
     } else {
         bam_record.reset();
@@ -178,7 +216,7 @@ void print_segment_annotation (const string & title, interval_map<long, MapEleme
     << current_gtf_records_splitted_it->first.upper() << "] :";
     for (auto start_segment_annotation_it = current_gtf_records_splitted_it->second.gtf_records.begin();
          start_segment_annotation_it != current_gtf_records_splitted_it->second.gtf_records.end(); ++start_segment_annotation_it){
-        cout << " " << (*start_segment_annotation_it)->exon_id;
+        cout << " " << (*start_segment_annotation_it)->exon_id << " (" << (*start_segment_annotation_it)->isoform_id << ")";
     }
     cout << endl;
 }
