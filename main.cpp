@@ -157,6 +157,7 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool fre
     }
     BamAlignment current_alignment;
     if (bam_reader.GetNextAlignment(current_alignment)){
+        cout << "RefId: " << current_alignment.RefID << endl;
         saved_reads = split_to_single_reads (current_alignment);
         bam_record = saved_reads.front();
         saved_reads.pop_front();
@@ -577,6 +578,36 @@ bool load_annotation (const string & full_path_name, std::map <string, multimap 
     return true;
 }
 
+
+void print_ref_info (const std::map <string, pair <int, int> > & info_map){
+    cout << "PRINT REFERENCE DATA FORM BAM FILE" << endl;
+    for (auto it = info_map.begin(); it != info_map.end(); ++it){
+        cout << "Chromosome: " << it->first << endl;
+        cout << "RefId: " << it->second.first << endl;
+        cout << "Length: " << it->second.second << endl;
+        cout << endl;
+    }
+}
+
+std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & reader){
+    std::map <string, pair <int, int> > output_map;
+    RefVector ref_data_vector = reader.GetReferenceData();
+    for (int i = 0; i < ref_data_vector.size(); i++ ){
+        RefData current_ref_data = ref_data_vector[i];
+        string chrom_name = current_ref_data.RefName;
+        int ref_id = reader.GetReferenceID(chrom_name);
+        if (ref_id == -1){
+            throw ("BUG: it shouldn't be like this");
+        }
+        int length = current_ref_data.RefLength;
+
+        pair <int, int> internal_pair (ref_id, length);
+        pair <string, pair <int, int> > external_pair (chrom_name, internal_pair);
+        output_map.insert (external_pair);
+    }
+    return output_map;
+}
+
 int main() {
 
     // read from BAM/SAM file to bam_records_input, save as a set of pointers
@@ -587,6 +618,32 @@ int main() {
         cout << "Couldn't open file " << bam_full_path_name << endl;
         return 0;
     } else cout << "Open " << bam_reader.GetFilename() << endl;
+
+    cout << endl;
+
+
+    cout << endl;
+
+    // key - chromosome name, value - <RefId, Length> for corresponding chromosome from the BAM file
+    std::map <string, pair <int, int> > chromosome_info_map = get_chromosome_map_info (bam_reader);
+
+    print_ref_info (chromosome_info_map); // Only for DEBUG
+
+    if (not bam_reader.HasIndex()){
+        cout << "Current BAM file isn't indexed" << endl;
+        cout << "Trying to find index files in the same directory" << endl;
+        if (bam_reader.LocateIndex(BamIndex::STANDARD)){
+            cout << "Located and loaded index file from disk" << endl;
+        } else {
+            cout << "Couldn't locate index file" << endl;
+            cout << "Trying to create the new one" << endl;
+            if (not bam_reader.CreateIndex(BamIndex::STANDARD)){
+                cout << "Cannot create index for current bam file. Exiting" << endl;
+                return 0;
+            };
+            cout << "Index file for current BAM file is succesfully created" << endl;
+        }
+    }
 
 
     // Should be sorted according to the start position
@@ -664,6 +721,32 @@ int main() {
 
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it) {
 
+        cout << endl;
+        string chrom = chrom_it->first;
+        cout << "Current chromosome from annotation file: " << chrom << endl;
+        auto map_it = chromosome_info_map.find(chrom);
+        if (map_it == chromosome_info_map.end()){
+            cout << "Cannot locate RefId for " << chrom << endl;
+            cout << "Skip the whole chromosome from annotation file" << endl;
+            continue;
+        }
+        int ref_id = map_it->second.first;
+        int length = map_it->second.second;
+        cout << "Found corresponding RefId:  " << ref_id << endl;
+        if (not bam_reader.HasIndex()){
+            cout << "ERROR: Current bam file isn't indexed" << endl;
+            cout << "EXIT. Find a bug in a code. You suppose to index BAM file after opening" << endl;
+            return 0;
+        }
+        cout << "Current BAM file is indexed" << endl;
+        cout << "Trying to set region limited by current chromosome: " << chrom << endl;
+
+        if (not bam_reader.SetRegion(ref_id, 0, ref_id, length)){
+            cout << "Cannot set region. Exit" << endl;
+                cout << bam_reader.GetErrorString(); // added just in case
+            return 0;
+        }
+        cout << "Region from BAM file is succesfully set for chromosome " << chrom << " with RefId = " << ref_id << endl << endl;
 
         // Making an interval map on the base of the annotation.
         // By default for each current_map_element we add the corresponding annotation pointer
@@ -701,9 +784,7 @@ int main() {
         std::map<string, set<GffRecordPtr> > iso_map; // map to arrange annotation according to the isoform key
         BamRecord previous_bam_record; // temporal pointer to bam record to detect the moment when next bam record isn't a part of big scpliced read
 
-
-        while (get_bam_record(bam_reader, current_bam_record,
-                              freeze)) { // Check if I can get new record from BAM file
+        while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
             // Check if gtf records array is already empty. Break the while loop
             if (current_gtf_records_splitted_it == gtf_records_splitted.end()) break;
 
