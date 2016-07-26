@@ -546,7 +546,7 @@ public:
 };
 
 
-// global_annotation_map : key - chromosome name, value - forward list of annotations
+// global_annotation_map_ptr : key - chromosome name, value - multimap of annotations, sorted by not-unique key - start pose of annotation
 // NOTE : forward list of annotations should be sorted by start pose with rule a<b
 bool load_annotation (const string & full_path_name, std::map <string, multimap <long, GffRecordPtr> > & global_annotation_map_ptr){
     ifstream input_stream (full_path_name);
@@ -618,7 +618,7 @@ std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & r
 
 int main() {
 
-    // read from BAM/SAM file to bam_records_input, save as a set of pointers
+    // read from BAM/SAM file
     string bam_full_path_name = "/Users/kot4or/ClionProjects/test_1/bam_ex_1.bam";
 //    string bam_full_path_name = "/Users/kot4or/ClionProjects/samtools_primer/tutorial/alignments/sim_reads_aligned.bam";
     BamReader bam_reader;
@@ -627,10 +627,7 @@ int main() {
         return 0;
     } else cout << "Open " << bam_reader.GetFilename() << endl;
 
-    cout << endl;
-
-
-    cout << endl;
+    cout << endl << endl;
 
     // key - chromosome name, value - <RefId, Length> for corresponding chromosome from the BAM file
     std::map <string, pair <int, int> > chromosome_info_map = get_chromosome_map_info (bam_reader);
@@ -653,30 +650,6 @@ int main() {
         }
     }
 
-
-    // Should be sorted according to the start position
-//    vector <BamRecordPtr> bam_records_input;
-//    BamRecordPtr r1 (new BamRecord (12,15, "1", 1));
-//    BamRecordPtr r2 (new BamRecord (14,21, "2", 1));
-//    BamRecordPtr r3 (new BamRecord (17,20, "6", 2));
-//    BamRecordPtr r6 (new BamRecord (36,45, "6", 2));
-//    BamRecordPtr r4 (new BamRecord (22,33, "3", 1));
-//    BamRecordPtr r5 (new BamRecord (22,45, "4", 1));
-//    BamRecordPtr r7 (new BamRecord (40,45, "5", 1));
-//    bam_records_input.push_back(r1);
-//    bam_records_input.push_back(r2);
-//    bam_records_input.push_back(r3);
-//    bam_records_input.push_back(r6);
-//    bam_records_input.push_back(r4);
-//    bam_records_input.push_back(r5);
-//    bam_records_input.push_back(r7);
-
-    // FOR DEBUG USE ONLY
-//    cout << "READS" << endl;
-//    for (auto bam_record_it = bam_records_input.begin(); bam_record_it != bam_records_input.end(); ++bam_record_it){
-//        cout << (*bam_record_it)->read_id << " - [" << (*bam_record_it)->start_pose << "," << (*bam_record_it)->end_pose << "]" << endl;
-//    }
-
     // read from tab delimited file
     string annotation_full_path_name = "/Users/kot4or/ClionProjects/test_1/tab_del_ex_1";
     std::map <string, multimap <long, GffRecordPtr> > global_annotation_map_ptr;
@@ -684,35 +657,6 @@ int main() {
     if (not load_annotation (annotation_full_path_name, global_annotation_map_ptr)){
         return 0;
     }
-
-
-
-
-
-
-//    forward_list <GffRecordPtr> gff_records_input;
-//    GffRecordPtr a1 (new GffRecord (10,20, "1" , "iso_1"));
-//    GffRecordPtr a2 (new GffRecord (22,33, "2" , "iso_1"));
-//    GffRecordPtr a3 (new GffRecord (36,47, "3" , "iso_1"));
-//    GffRecordPtr a4 (new GffRecord (50,58, "4" , "iso_1"));
-//    GffRecordPtr a5 (new GffRecord (17,33, "5" , "iso_2"));
-//    GffRecordPtr a6 (new GffRecord (40,45, "6" , "iso_2"));
-//    GffRecordPtr a7 (new GffRecord (50,58, "7" , "iso_2"));
-//    GffRecordPtr a8 (new GffRecord (22,30, "8" , "iso_3"));
-//    GffRecordPtr a9 (new GffRecord (36,58, "9" , "iso_3"));
-//
-//    gff_records_input.push_front(a1);
-//    gff_records_input.push_front(a2);
-//    gff_records_input.push_front(a3);
-//    gff_records_input.push_front(a4);
-//    gff_records_input.push_front(a5);
-//    gff_records_input.push_front(a6);
-//    gff_records_input.push_front(a7);
-//    gff_records_input.push_front(a8);
-//    gff_records_input.push_front(a9);
-
-//    gff_records_input.reverse();  // we need to do reverse because we can use only push_front,
-//                                  // but we want to make it sorted with rule a>=b
 
     // FOR DEBUG USE ONLY
     cout << "ANNOTATIONS" << endl;
@@ -857,8 +801,7 @@ int main() {
                 temp_set.insert((*gff_it));
                 // check if slice_number == 1 which is equal that read isn't spliced or
                 // current annotation fits the condition which are required for specific part of the spliced read (start, middle or end part of spliced read)
-                if (slice_number == 1 or
-                    fit_spliced_read_condition(current_slice, slice_number, temp_set, current_bam_record)) {
+                if (slice_number == 1 or fit_spliced_read_condition(current_slice, slice_number, temp_set, current_bam_record)) {
                     // Add new element into map
                     pair<std::map<string, set<GffRecordPtr> >::iterator, bool> ret;
                     pair<string, set<GffRecordPtr> > input_pair((*gff_it)->isoform_id, temp_set);
