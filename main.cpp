@@ -61,13 +61,15 @@ public:
     string isoform_id; // set the name of the isofom=rm to which current annotation belongs
     vector < BamRecordPtr > bam_records; // array of pointers to all of the reads, which belongs to this annotation. Need this for debug, than we can delete this field
     long reads_count; // total number of reads, which belongs to this annotation
+    GffRecordPtr previous_gff; // ptr to the previous annotation in the same isoform. In NULL - first annotation in current isiform
 
     // CONSTRUCTOR WITH PARAMETERS
-    GffRecord (long start, long end, string exon, string isoform)
+    GffRecord (long start, long end, string exon, string isoform, GffRecordPtr pre_gff)
             : start_pose (start)
             , end_pose (end)
             , exon_id (exon)
             , isoform_id (isoform)
+            , previous_gff (pre_gff)
             , reads_count (0)
     {}
 
@@ -77,6 +79,7 @@ public:
             , end_pose (0)
             , exon_id ("")
             , isoform_id ("")
+            , previous_gff (NULL)
             , reads_count (0)
     {}
 
@@ -157,7 +160,6 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool fre
     }
     BamAlignment current_alignment;
     if (bam_reader.GetNextAlignment(current_alignment)){
-        cout << "RefId: " << current_alignment.RefID << endl;
         saved_reads = split_to_single_reads (current_alignment);
         bam_record = saved_reads.front();
         saved_reads.pop_front();
@@ -563,13 +565,16 @@ bool load_annotation (const string & full_path_name, std::map <string, multimap 
         Isoform current_isoform(line);
 //        current_isoform.print();
 
+        GffRecordPtr previous_annotation;
+        previous_annotation.reset();
+
         for (int i = 0; i < current_isoform.exon_count; i++){
             stringstream ss;
             ss << i+1;
             string exon_id = ss.str();
 
-
-            GffRecordPtr current_gff (new GffRecord (current_isoform.exon_starts[i], current_isoform.exon_ends[i], exon_id, current_isoform.name) );
+            GffRecordPtr current_gff (new GffRecord (current_isoform.exon_starts[i], current_isoform.exon_ends[i], exon_id, current_isoform.name, previous_annotation) );
+            previous_annotation = current_gff;
             pair <long, GffRecordPtr> internal_pair (current_isoform.exon_starts[i], current_gff);
             multimap <long, GffRecordPtr> internal_multimap;
             internal_multimap.insert (internal_pair);
@@ -614,6 +619,33 @@ std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & r
         output_map.insert (external_pair);
     }
     return output_map;
+}
+
+// if input_set forms linked list, for each of the element, except the first one, I can find the previous one.
+// If not - return false;
+bool form_line (set<GffRecordPtr> input_set){
+    cout << "Check if set of annotation forms linked list" << endl;
+    if (input_set.size() == 1) return true;
+    int counter = 0;
+    for (auto it = input_set.begin(); it != input_set.end(); ++it){
+        if ((*it)->previous_gff){
+            auto it_check = input_set.find((*it)->previous_gff);
+            if (it_check == input_set.end()) {
+                cout << "for element " << (*it)->exon_id << " from " << (*it)->isoform_id << " cannot find any previous" << endl;
+                counter++;
+            } else{
+                cout << "for element " << (*it)->exon_id << " from " << (*it)->isoform_id << " found previous " << (*it_check)->exon_id << " from " << (*it_check)->isoform_id <<  endl;
+            }
+        } else {
+            cout << "Found first element of isoform: " << (*it)->exon_id << " from " << (*it)->isoform_id << endl;
+            counter++;
+        }
+    }
+    if (counter > 1){
+        cout << "counter > 1. Impossible to have two or more unlinked elements" << endl;
+        return false;
+    }
+    return true;
 }
 
 int main() {
@@ -780,8 +812,7 @@ int main() {
             // Find stop segment annotation
             // If false call get_bam_record with freeze = false ===> skip current bam record and get the next one
             interval_map<long, MapElement>::iterator temp_gtf_records_splitted_it = current_gtf_records_splitted_it;
-            if (not find_stop_segment_annotation(current_bam_record, temp_gtf_records_splitted_it,
-                                                 gtf_records_splitted.end(), freeze))
+            if (not find_stop_segment_annotation(current_bam_record, temp_gtf_records_splitted_it, gtf_records_splitted.end(), freeze))
                 continue;
 
             // FOR DEBUG USE ONLY
@@ -826,6 +857,12 @@ int main() {
                     // we caught the correct spliced read
                     // if not - go to next isoform
                     if (map_iterator->second.size() == slice_number) {
+                        cout << "Found possible location of spliced read" << endl;
+                        if (not form_line (map_iterator->second)) {
+                            cout << "Current set of annotations doesn't form linked list" << endl;
+                            continue; // go to next isoform if annotation in current set don't form an "unbreakable" line
+                        }
+
                         // iterating iver annotation of one specific isoform from iso_map and add to each of them
                         // pointer to a current bam record
                         for (auto gff_it = map_iterator->second.begin();
