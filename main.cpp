@@ -174,14 +174,22 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool fre
 // If we need to skip interval map segment we set freeze to true to avoid changing current_bam_record, when iterating over the loop,
 // that get new value from bam records array
 // If skip interval map segment - increment iterator current_gtf_records_splitted_it
-bool find_start_segment_annotation (BamRecordPtr current_bam_record, interval_map<long, MapElement>::iterator & current_gtf_records_splitted_it, bool & freeze){
+bool allow_skip_rest = false;
+bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord previous_bam_record, interval_map<long, MapElement>::iterator & current_gtf_records_splitted_it, bool & freeze){
+    if (current_bam_record->read_id == previous_bam_record.read_id and allow_skip_rest){
+        freeze = false;
+        return false;
+    }
     if (current_bam_record->start_pose < current_gtf_records_splitted_it->first.lower()) {
         cout << "   Skip read " << current_bam_record->read_id << " [" <<
         current_bam_record->start_pose << "," <<
         current_bam_record->end_pose << "]" << endl;
+        cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
         freeze = false; // Set freeze to false to change current_bam_record
+        allow_skip_rest = true;
         return false;
     }
+    allow_skip_rest = false;
     if (current_bam_record->start_pose >= current_gtf_records_splitted_it->first.upper()) {
 //        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
         cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
@@ -797,10 +805,30 @@ int main() {
             // get the number of parts from current bam record
             slice_number = current_bam_record->slices;
 
+            // if the next read isn't a part of the same big spliced read (in this case we check if read_id is equal)
+            // we set current_slice equal to 1 and clear iso_map, because we don't want to have annotation which are relevant for the previous read
+            // make a backup for interval map iterator.
+            // We need to make a backup because the next read could be a part of spliced read
+            // and in that case we will change current_gtf_records_splitted_it which we will restore from
+            // its backup version when we rich the last part in spliced read
+            // TODO maybe it should be the other way to check it
+            if (previous_bam_record.read_id != current_bam_record->read_id) {
+                current_slice = 1;
+                iso_map.clear();
+                backup_current_gtf_records_splitted_it = current_gtf_records_splitted_it; // update the buckup for gff iterator
+                cout << "iso_map is cleared" << endl;
+            }
+
+
+
             // Find start segment annotation
             // If false call get_bam_record again. freeze is true if we need to skip the read and false if we want to skip annotation
-            if (not find_start_segment_annotation(current_bam_record, current_gtf_records_splitted_it, freeze))
+            if (not find_start_segment_annotation(current_bam_record, previous_bam_record, current_gtf_records_splitted_it, freeze)){
+                previous_bam_record = *current_bam_record; // update previous_bam_record with current value
                 continue;
+            }
+            previous_bam_record = *current_bam_record; // update previous_bam_record with current value
+
 
             // FOR DEBUG USE ONLY
             print_segment_annotation("   start segment annotation", current_gtf_records_splitted_it);
@@ -815,20 +843,7 @@ int main() {
             // FOR DEBUG USE ONLY
             print_segment_annotation("   stop segment annotation", temp_gtf_records_splitted_it);
 
-            // if the next read isn't a part of the same big spliced read (in this case we check if read_id is equal)
-            // we set current_slice equal to 1 and clear iso_map, because we don't want to have annotation which are relevant for the previous read
-            // make a backup for interval map iterator.
-            // We need to make a backup because the next read could be a part of spliced read
-            // and in that case we will change current_gtf_records_splitted_it which we will restore from
-            // its backup version when we rich the last part in spliced read
-            // TODO maybe it should be the other way to check it
-            if (previous_bam_record.read_id != current_bam_record->read_id) {
-                current_slice = 1;
-                iso_map.clear();
-                backup_current_gtf_records_splitted_it = current_gtf_records_splitted_it; // update the buckup for gff iterator
-                cout << "iso_map is cleared" << endl;
-            }
-            previous_bam_record = *current_bam_record; // update previous_bam_record with current value
+
 
             // find intersection of two sets
             // we receive set of annotation which is similar between start and end interval map segments
@@ -894,6 +909,7 @@ int main() {
 
     cout << endl << "RESULTS" << endl;
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
+        cout << "Chrom: " << chrom_it->first << endl;
         for (auto start_it = chrom_it->second.begin(); start_it!=chrom_it->second.end(); ++start_it){
             cout << "exon " << (*start_it->second).exon_id  << " from " << (*start_it->second).isoform_id << " - [";
             cout << (*start_it->second).start_pose << "," << (*start_it->second).end_pose << "]" << " : ";
