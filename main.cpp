@@ -23,6 +23,7 @@ class MapElement;
 typedef boost::shared_ptr<BamRecord> BamRecordPtr;
 typedef boost::shared_ptr<GffRecord> GffRecordPtr;
 
+
 class BamRecord {
 public:
     long start_pose; // start position of the read
@@ -53,6 +54,47 @@ public:
     }
 };
 
+
+// Class for interval_map only
+// if we are not planning to add any other fields, we can change it
+// into the simple forward list of GffRecordPtr
+class MapElement {
+public:
+    forward_list < GffRecordPtr > gtf_records; // by default unsorted list of pointers GffRecordPtr to annotations
+
+    // when we add items due to operator += we don't care about the order
+    inline MapElement& operator+=(const MapElement& other_element) {
+        for (auto it = other_element.gtf_records.begin(); it != other_element.gtf_records.end(); ++it){
+            this->gtf_records.push_front(*it);
+        }
+        return *this;
+    }
+
+    inline bool operator==(const MapElement& other_element) const
+    {
+        return this->gtf_records == other_element.gtf_records;
+    }
+
+};
+
+// To save not only pointer to annotation, but its start and stop iterators from interval map
+class GffAndStartStopIt {
+public:
+    GffRecordPtr annotation;
+    interval_map<long, MapElement>::iterator start_it;
+    interval_map<long, MapElement>::iterator stop_it;
+    GffAndStartStopIt (GffRecordPtr new_annotation, interval_map<long, MapElement>::iterator new_start_it, interval_map<long, MapElement>::iterator new_stop_it)
+            : annotation(new_annotation)
+            , start_it (new_start_it)
+            , stop_it (new_stop_it)
+    {
+    }
+    bool operator<(const GffAndStartStopIt& other) const
+    {
+        return annotation < other.annotation;  //assume that you compare the record based on a
+    }
+};
+
 class GffRecord {
 public:
     long start_pose; // start position of annotation
@@ -62,6 +104,7 @@ public:
     vector < BamRecordPtr > bam_records; // array of pointers to all of the reads, which belongs to this annotation. Need this for debug, than we can delete this field
     long reads_count; // total number of reads, which belongs to this annotation
     GffRecordPtr previous_gff; // ptr to the previous annotation in the same isoform. In NULL - first annotation in current isiform
+
 
     // CONSTRUCTOR WITH PARAMETERS
     GffRecord (long start, long end, string exon, string isoform, GffRecordPtr pre_gff)
@@ -85,27 +128,7 @@ public:
 
 };
 
-// Class for interval_map only
-// if we are not planning to add any other fields, we can change it
-// into the simple forward list of GffRecordPtr
-class MapElement {
-public:
-    forward_list < GffRecordPtr > gtf_records; // by default unsorted list of pointers GffRecordPtr to annotations
 
-    // when we add items due to operator += we don't care about the order
-    inline MapElement& operator+=(const MapElement& other_element) {
-        for (auto it = other_element.gtf_records.begin(); it != other_element.gtf_records.end(); ++it){
-            this->gtf_records.push_front(*it);
-        }
-        return *this;
-    }
-
-    inline bool operator==(const MapElement& other_element) const
-    {
-        return this->gtf_records == other_element.gtf_records;
-    }
-
-};
 
 
 
@@ -257,18 +280,18 @@ set<GffRecordPtr> get_intersection (interval_map<long, MapElement>::iterator inp
 // 3. If read is the middle part of big spliced read and both its start and end position are equal to start and end position of current annotation correspondingly - return true
 // In all other cases return false
 // NOTE temp_set has only one record. We can change it for GffRecordPtr and it send to the function just temp_set.begin()
-bool fit_spliced_read_condition(const long & current_slice, const long & slice_number, const set <GffRecordPtr> & temp_set, BamRecordPtr current_bam_record){
+bool fit_spliced_read_condition(const long & current_slice, const long & slice_number, const set <GffAndStartStopIt> & temp_set, BamRecordPtr current_bam_record){
     if (slice_number == 1) return true; // added just in case to make sure that we are not trying ot check unspliced read
-    if (current_slice == 1 and (*temp_set.begin())->end_pose != current_bam_record->end_pose ) {
+    if (current_slice == 1 and temp_set.begin()->annotation->end_pose != current_bam_record->end_pose ) {
         return false;
     } else
-        if (current_slice == slice_number and (*temp_set.begin())->start_pose != current_bam_record->start_pose){
+        if (current_slice == slice_number and temp_set.begin()->annotation->start_pose != current_bam_record->start_pose){
             return false;
         } else
             if (current_slice > 1 and
                 current_slice < slice_number and
-                (*temp_set.begin())->end_pose != current_bam_record->end_pose and
-                (*temp_set.begin())->start_pose != current_bam_record->start_pose){
+                temp_set.begin()->annotation->end_pose != current_bam_record->end_pose and
+                temp_set.begin()->annotation->start_pose != current_bam_record->start_pose){
                 return false;
             }
     return true;
@@ -640,8 +663,14 @@ std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & r
 
 // if input_set forms linked list, for each of the element, except the first one, I can find the previous one.
 // If not - return false;
-bool form_line (set<GffRecordPtr> input_set){
+bool form_line (const set<GffAndStartStopIt> & complete_input_set){
     cout << "Check if set of annotation forms linked list" << endl;
+
+    set<GffRecordPtr> input_set;
+    for (auto it = complete_input_set.begin(); it != complete_input_set.end(); ++it){
+        input_set.insert(it->annotation);
+    }
+
     if (input_set.size() == 1) return true;
     int counter = 0;
     for (auto it = input_set.begin(); it != input_set.end(); ++it){
@@ -802,7 +831,7 @@ int main() {
         bool freeze = false; // if true - calling the get_bam_record function return's the same read as it it did it before
         long slice_number = 1; // if read is spliced slice_number > 1
         long current_slice = 1; // defines the position of cuurent read as a part of a big spliced read
-        std::map<string, set<GffRecordPtr> > iso_map; // map to arrange annotation according to the isoform key
+        std::map<string, set<GffAndStartStopIt> > iso_map; // map to arrange annotation according to the isoform key
         BamRecord previous_bam_record; // temporal pointer to bam record to detect the moment when next bam record isn't a part of big scpliced read
 
         while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
@@ -863,16 +892,18 @@ int main() {
             set<GffRecordPtr> gff_intersection = get_intersection(current_gtf_records_splitted_it,
                                                                   temp_gtf_records_splitted_it);
 
+
+
             // iteratore over the intersection set
             for (auto gff_it = gff_intersection.begin(); gff_it != gff_intersection.end(); ++gff_it) {
-                set<GffRecordPtr> temp_set; // we save only one pointer to this set, but we need to use set, because we want to add it into iso_map
-                temp_set.insert((*gff_it));
+                set<GffAndStartStopIt> temp_set; // we save only one pointer to this set, but we need to use set, because we want to add it into iso_map
+                temp_set.insert(GffAndStartStopIt (*gff_it, current_gtf_records_splitted_it, temp_gtf_records_splitted_it));
                 // check if slice_number == 1 which is equal that read isn't spliced or
                 // current annotation fits the condition which are required for specific part of the spliced read (start, middle or end part of spliced read)
                 if (slice_number == 1 or fit_spliced_read_condition(current_slice, slice_number, temp_set, current_bam_record)) {
                     // Add new element into map
-                    pair<std::map<string, set<GffRecordPtr> >::iterator, bool> ret;
-                    pair<string, set<GffRecordPtr> > input_pair((*gff_it)->isoform_id, temp_set);
+                    pair<std::map<string, set<GffAndStartStopIt> >::iterator, bool> ret;
+                    pair<string, set<GffAndStartStopIt> > input_pair((*gff_it)->isoform_id, temp_set);
                     ret = iso_map.insert(input_pair);
                     // If already exist with the same isoform key - add annotation to the corresponding set of the map
                     if (ret.second == false) {
@@ -902,11 +933,10 @@ int main() {
 
                         // iterating iver annotation of one specific isoform from iso_map and add to each of them
                         // pointer to a current bam record
-                        for (auto gff_it = map_iterator->second.begin();
-                             gff_it != map_iterator->second.end(); ++gff_it) {
-                            (*gff_it)->bam_records.push_back(current_bam_record);
-                            (*gff_it)->reads_count++;
-                            cout << "   into annotation " << (*gff_it)->exon_id << " from " << (*gff_it)->isoform_id << " added read " <<
+                        for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it) {
+                            gff_it->annotation->bam_records.push_back(current_bam_record);
+                            gff_it->annotation->reads_count++;
+                            cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " <<
                             current_bam_record->read_id << endl;
                         }
                     }
