@@ -694,6 +694,17 @@ bool form_line (const set<GffAndStartStopIt> & complete_input_set){
     return true;
 }
 
+void print_weight_array (const vector <vector <double> > & weight_array){
+    cout << "WEIGHT ARRAY" << endl;
+    for (int i = 0; i < weight_array.size(); i++) {
+        cout <<  i <<") ";
+        for (int j = 0; j < weight_array[i].size(); j++) {
+            cout << weight_array[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
 int main() {
 
     // read from BAM/SAM file
@@ -798,15 +809,7 @@ int main() {
         // create an empty matrix: column - one interval from interval map, row - isoforms
         vector <vector <double> > weight_array (gtf_records_splitted.iterative_size(), vector <double> (iso_var_map[chrom].size(), 0));
         // FOR DEBUG ONLY
-        cout << "WEIGHT ARRAY" << endl;
-        for (int i = 0; i < weight_array.size(); i++) {
-            cout <<  i <<") ";
-            for (int j = 0; j < weight_array[i].size(); j++) {
-                cout << weight_array[i][j] << " ";
-            }
-            cout << endl;
-        }
-
+        print_weight_array (weight_array);
 
 
 
@@ -919,7 +922,30 @@ int main() {
             // If we reached the end of the big spliced read (equal to current_slice > slice_number)
             // In case of unspliced read slice_number = 1 and current_slice will be 2 after incrementing in the previous line
             if (current_slice > slice_number) {
-                // iterating over the isoforms from iso_map
+
+                // iterating over the isoforms from iso_map to get divider
+                double divider = 0;
+                double weight = 0;
+                for (auto map_iterator = iso_map.begin(); map_iterator != iso_map.end(); map_iterator++) {
+                    if (map_iterator->second.size() == slice_number){
+                        if (not form_line (map_iterator->second)) {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                    for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it) {
+                        divider += distance (gff_it->start_it, gff_it->stop_it) + 1;
+                    }
+                }
+                cout << "divider = " << divider << endl;
+                if (divider != 0){
+                    weight = 1 / ( (double) divider * (double) slice_number );
+                    cout << "Weight = " << weight << endl;
+                }
+
+
+                // iterating over the isoforms from iso_map to fill exons' data
                 for (auto map_iterator = iso_map.begin(); map_iterator != iso_map.end(); map_iterator++) {
                     // if current isoform has the same number of annotation as number of parts from the spliced read
                     // we caught the correct spliced read
@@ -936,14 +962,26 @@ int main() {
                         for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it) {
                             gff_it->annotation->bam_records.push_back(current_bam_record);
                             gff_it->annotation->reads_count++;
-                            cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " <<
-                            current_bam_record->read_id << endl;
+                            cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << current_bam_record->read_id << endl;
+                            // updated weight array
+                            string isoform = gff_it->annotation->isoform_id;
+                            int j = iso_var_map[chrom][isoform];
+                            cout << "j = " << j << endl;
+                            long start_i = distance (gtf_records_splitted.begin(), gff_it->start_it);
+                            long stop_i = distance (gtf_records_splitted.begin(), gff_it->stop_it);
+                            cout << "start_i = " << start_i << endl;
+                            cout << "stop_i = " << stop_i << endl;
+                            // FOR DEBUG ONLY
+                            for (int i = start_i; i <= stop_i; i++) {
+                                    weight_array[i][j] += weight;
+                            }
                         }
                     }
                 }
                 // at the end of the iteration over the isoform map, we need to revert value of current_gtf_records_splitted_it
                 // from its backup version
                 current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it; // get iterator from the backup
+                print_weight_array (weight_array);
             }
             // set freeze to false to get new read from the bam file when calling function get_bam_record
             freeze = false;
