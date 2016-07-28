@@ -12,6 +12,8 @@
 #include "include/api/BamReader.h"
 #include "include/api/BamMultiReader.h"
 
+#include <iomanip>
+
 using namespace std;
 using namespace boost::icl;
 using namespace BamTools;
@@ -696,10 +698,11 @@ bool form_line (const set<GffAndStartStopIt> & complete_input_set){
 
 void print_weight_array (const vector <vector <double> > & weight_array){
     cout << "WEIGHT ARRAY" << endl;
+    cout << std::setprecision(3) <<  std::fixed;
     for (int i = 0; i < weight_array.size(); i++) {
         cout <<  i <<") ";
         for (int j = 0; j < weight_array[i].size(); j++) {
-            cout << weight_array[i][j] << " ";
+            cout << weight_array[i][j] << "   ";
         }
         cout << endl;
     }
@@ -924,8 +927,8 @@ int main() {
             if (current_slice > slice_number) {
 
                 // iterating over the isoforms from iso_map to get divider
-                double divider = 0;
-                double weight = 0;
+                double global_koef = slice_number; // defines the weight koef of each slice of the spliced read
+                double vertical_koef = 0; // defines the weight koef if read is aligned on few isoforms
                 for (auto map_iterator = iso_map.begin(); map_iterator != iso_map.end(); map_iterator++) {
                     if (map_iterator->second.size() == slice_number){
                         if (not form_line (map_iterator->second)) {
@@ -934,14 +937,7 @@ int main() {
                     } else {
                         continue;
                     }
-                    for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it) {
-                        divider += distance (gff_it->start_it, gff_it->stop_it) + 1;
-                    }
-                }
-                cout << "divider = " << divider << endl;
-                if (divider != 0){
-                    weight = 1 / ( (double) divider * (double) slice_number );
-                    cout << "Weight = " << weight << endl;
+                    vertical_koef++;
                 }
 
 
@@ -969,9 +965,20 @@ int main() {
                             cout << "j = " << j << endl;
                             long start_i = distance (gtf_records_splitted.begin(), gff_it->start_it);
                             long stop_i = distance (gtf_records_splitted.begin(), gff_it->stop_it);
+                            long horizontal_koef = distance (gff_it->start_it, gff_it->stop_it) + 1;
                             cout << "start_i = " << start_i << endl;
                             cout << "stop_i = " << stop_i << endl;
+                            cout << "length = " << horizontal_koef << endl;
                             // FOR DEBUG ONLY
+                            if (((double)global_koef * (double)vertical_koef * (double)horizontal_koef) == 0) {
+                                cout << "Something went wrong. Find a bug" << endl;
+                                throw ("Error: dividing by zero");
+                            }
+                            double weight = 1 / ((double)global_koef * (double)vertical_koef * (double)horizontal_koef);
+                            cout << "global_koef = " << global_koef << endl;
+                            cout << "vertical_koef = " << vertical_koef << endl;
+                            cout << "horizontal_koef = " << horizontal_koef << endl;
+                            cout << "weight = " << weight << endl;
                             for (int i = start_i; i <= stop_i; i++) {
                                     weight_array[i][j] += weight;
                             }
