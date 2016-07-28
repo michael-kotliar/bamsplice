@@ -223,8 +223,7 @@ bool find_stop_segment_annotation (BamRecordPtr current_bam_record,
 
 // FOR DEBUG ONLY
 void print_segment_annotation (const string & title, interval_map<long, MapElement>::iterator current_gtf_records_splitted_it){
-    cout << title << " " << "[" << current_gtf_records_splitted_it->first.lower() << ","
-    << current_gtf_records_splitted_it->first.upper() << "] :";
+    cout << title << " " << "[" << current_gtf_records_splitted_it->first.lower() << "," << current_gtf_records_splitted_it->first.upper() << "] :";
     for (auto start_segment_annotation_it = current_gtf_records_splitted_it->second.gtf_records.begin();
          start_segment_annotation_it != current_gtf_records_splitted_it->second.gtf_records.end(); ++start_segment_annotation_it){
         cout << " " << (*start_segment_annotation_it)->exon_id << " (" << (*start_segment_annotation_it)->isoform_id << ")";
@@ -547,10 +546,19 @@ public:
     }
 };
 
+void print_iso_var_map (const std::map <string, std::map <string, int> > & iso_var_map){
+    for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
+        cout << "Chromosome: " << ext_it->first << endl;
+        for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
+            cout << "  isoform: " << int_it->first << " index: " << int_it->second << endl;
+        }
+    }
+}
+
 
 // global_annotation_map_ptr : key - chromosome name, value - multimap of annotations, sorted by not-unique key - start pose of annotation
 // NOTE : forward list of annotations should be sorted by start pose with rule a<b
-bool load_annotation (const string & full_path_name, std::map <string, multimap <long, GffRecordPtr> > & global_annotation_map_ptr){
+bool load_annotation (const string & full_path_name, std::map <string, multimap <long, GffRecordPtr> > & global_annotation_map_ptr, std::map <string, std::map <string, int> > & iso_var_map){
     ifstream input_stream (full_path_name);
     if (!input_stream) {
         cout << "Cannot open file " << full_path_name << endl;
@@ -563,7 +571,16 @@ bool load_annotation (const string & full_path_name, std::map <string, multimap 
         }
 
         Isoform current_isoform(line);
-//        current_isoform.print();
+
+        pair <string, int> internal_pair_for_iso_var_map (current_isoform.name, iso_var_map[current_isoform.chrom].size());
+        std::map <string, int> internal_iso_var_map;
+        internal_iso_var_map.insert(internal_pair_for_iso_var_map);
+        pair <std::map <string, std::map <string, int> >::iterator, bool> res;
+        pair <string, std::map <string, int> > external_pair_for_iso_var_map (current_isoform.chrom, internal_iso_var_map);
+        res = iso_var_map.insert (external_pair_for_iso_var_map);
+        if (res.second == false){
+            res.first->second.insert(internal_pair_for_iso_var_map);
+        }
 
         GffRecordPtr previous_annotation;
         previous_annotation.reset();
@@ -686,9 +703,14 @@ int main() {
     string annotation_full_path_name = "/Users/kot4or/ClionProjects/test_1/tab_del_ex_1";
     std::map <string, multimap <long, GffRecordPtr> > global_annotation_map_ptr;
 
-    if (not load_annotation (annotation_full_path_name, global_annotation_map_ptr)){
+    // map to save <chromosome name, <isoform name, correspondent index in array> >
+    std::map <string, std::map <string, int> > iso_var_map;
+    if (not load_annotation (annotation_full_path_name, global_annotation_map_ptr, iso_var_map)){
         return 0;
     }
+    cout << endl;
+    print_iso_var_map (iso_var_map);
+    cout << endl;
 
     // FOR DEBUG USE ONLY
     cout << "ANNOTATIONS" << endl;
@@ -743,6 +765,21 @@ int main() {
                                                current_map_element)
             );
         }
+
+        // create an empty matrix: column - one interval from interval map, row - isoforms
+        vector <vector <double> > weight_array (gtf_records_splitted.iterative_size(), vector <double> (iso_var_map[chrom].size(), 0));
+        // FOR DEBUG ONLY
+        cout << "WEIGHT ARRAY" << endl;
+        for (int i = 0; i < weight_array.size(); i++) {
+            cout <<  i <<") ";
+            for (int j = 0; j < weight_array[i].size(); j++) {
+                cout << weight_array[i][j] << " ";
+            }
+            cout << endl;
+        }
+
+
+
 
         // FOR DEBUG USE ONLY
         cout << "GENERATE INTERVAL MAP" << endl;
