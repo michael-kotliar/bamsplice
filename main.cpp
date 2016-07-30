@@ -708,11 +708,16 @@ void print_weight_array (const vector <vector <double> > & weight_array){
     }
 }
 
-int main() {
+int main(int argc, char **argv) {
+    if (argc != 3){
+        cout << "You should set the path to bam and tab-delimited file as follows:" << endl;
+        cout << "  <full path to bam-file> <full path to tab-delimited file>" << endl;
+        cout << "exiting" << endl;
+        return 0;
+    }
 
     // read from BAM/SAM file
-    string bam_full_path_name = "/Users/kot4or/ClionProjects/test_1/bam_ex_1.bam";
-//    string bam_full_path_name = "/Users/kot4or/ClionProjects/samtools_primer/tutorial/alignments/sim_reads_aligned.bam";
+    string bam_full_path_name = string(argv[1]);
     BamReader bam_reader;
     if (not bam_reader.Open(bam_full_path_name)) {
         cout << "Couldn't open file " << bam_full_path_name << endl;
@@ -743,7 +748,7 @@ int main() {
     }
 
     // read from tab delimited file
-    string annotation_full_path_name = "/Users/kot4or/ClionProjects/test_1/tab_del_ex_1";
+    string annotation_full_path_name = string(argv[2]);
     std::map <string, multimap <long, GffRecordPtr> > global_annotation_map_ptr;
 
     // map to save <chromosome name, <isoform name, correspondent index in array> >
