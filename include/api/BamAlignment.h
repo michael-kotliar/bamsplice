@@ -51,7 +51,7 @@ class API_EXPORT BamAlignment {
         bool IsReverseStrand(void) const;     // returns true if alignment mapped to reverse strand
         bool IsSecondMate(void) const;        // returns true if alignment is second mate on read
 
-    // manipulate alignment flags
+    // maniBamAlignmentpulate alignment flags
     public:        
         void SetIsDuplicate(bool ok);         // sets value of "PCR duplicate" flag
         void SetIsFailedQC(bool ok);          // sets value of "failed quality control" flag
