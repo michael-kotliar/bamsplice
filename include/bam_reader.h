@@ -63,3 +63,5 @@ void print_ref_info (const std::map <string, pair <int, int> > & info_map);
 
 std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & reader);
 
+bool make_index (BamReader & bam_reader);
+

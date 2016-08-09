@@ -30,7 +30,7 @@ Isoform::Isoform (string line){
     vector<string> line_splitted = split_line(line);
 
     // BIN
-    if (not str_to_int(bin, line_splitted[0])){
+    if (not str_to_long(bin, line_splitted[0])){
         throw ("Isoform constructor error");
     }
 
@@ -64,7 +64,7 @@ Isoform::Isoform (string line){
     }
 
     // EXON_COUNT
-    if (not str_to_int(exon_count, line_splitted[8])){
+    if (not str_to_long(exon_count, line_splitted[8])){
         throw ("Isoform constructor error");
     }
 
@@ -109,6 +109,14 @@ Isoform::Isoform (string line){
 
 }
 
+Isoform::Isoform ():
+         cds_start_stat (cds_stat::none)
+        ,cds_end_stat (cds_stat::none)
+{
+
+}
+
+
 bool str_to_cds_stat(const string &value, cds_stat &result){
     if (value == "none") {
         result = none;
@@ -149,11 +157,17 @@ bool load_annotation (const string & full_path_name,
     }
     string line;
     while (getline(input_stream, line)) {
-        if (string_tools::include_key(line, "name")) {
+        if (string_tools::include_key(line, "name")) { // to filter header lines
+            continue;
+        }
+        Isoform current_isoform;
+        try {
+            current_isoform = Isoform (line);
+        } catch (...){
+            cout << "Skipped line [" << line << "]" << endl;
             continue;
         }
 
-        Isoform current_isoform(line);
 
         pair <string, int> internal_pair_for_iso_var_map (current_isoform.name, iso_var_map[current_isoform.chrom].size());
         std::map <string, int> internal_iso_var_map;
@@ -186,7 +200,5 @@ bool load_annotation (const string & full_path_name,
             }
         }
     }
-
-
     return true;
 }

@@ -20,16 +20,18 @@ using namespace BamTools;
 
 
 int main(int argc, char **argv) {
+
     // Read the paths from arguments
     if (argc != 3){
-        cout << "You should set the path to bam and tab-delimited file as follows:" << endl;
-        cout << "  <full path to bam-file> <full path to tab-delimited file>" << endl;
-        cout << "exiting" << endl;
+        cout << "Set <full path to bam-file> <full path to tab-delimited file>" << endl;
         return 0;
     }
 
-    // read from BAM/SAM file
-    string bam_full_path_name = string(argv[1]); // set path to bam file from first argument
+    // Set paths to bam and annotation files
+    string bam_full_path_name = string(argv[1]);
+    string annotation_full_path_name = string(argv[2]);
+
+    // read from BAM file
     BamReader bam_reader;
     if (not bam_reader.Open(bam_full_path_name)) {
         cout << "Couldn't open file " << bam_full_path_name << endl;
@@ -44,50 +46,34 @@ int main(int argc, char **argv) {
 
     print_ref_info (chromosome_info_map); // Only for DEBUG
 
-
     // Check if current bam file is indexed (and that index data is loaded into program)
-    if (not bam_reader.HasIndex()){
-        cout << "Current BAM file isn't indexed" << endl;
-        cout << "Trying to find index files in the same directory" << endl;
-        // Trying to load index data from the filesystem
-        // If BamIndex::STANDARD we are looking for BAI file
-        if (bam_reader.LocateIndex(BamIndex::STANDARD)){
-            cout << "Located and loaded index file from disk" << endl;
-        } else {
-            cout << "Couldn't locate index file" << endl;
-            cout << "Trying to create the new one" << endl;
-            // Trying to create index data ourself
-            // BamIndex::STANDARD - we are trying to create BAI file
-            if (not bam_reader.CreateIndex(BamIndex::STANDARD)){
-                cout << "Cannot create index for current bam file. Exiting" << endl;
-                return 0;
-            };
-            cout << "Index file for current BAM file is succesfully created" << endl;
-        }
+    if (not make_index(bam_reader)){
+        return 0;
     }
 
-    // read from tab delimited file
-    string annotation_full_path_name = string(argv[2]); // set the path to the tab delimited file from the second arg
 
-    // Map to store all anotation data with the following structure:
+    // read from tab delimited file
+
+    // Create map to store all annotation data with the following structure:
     // < chromosome_key, multimap < exon_start_pose, exon_pointer> >
-    // exon_start_pose - need to sort mutlimap by the start pose of exon; we cannot do if we add only pointers
+    // exon_start_pose - is needed for sorting mutlimap by the start pose of exon; we cannot do if we add only pointers
     std::map <string, multimap <long, GffRecordPtr> > global_annotation_map_ptr;
 
-    // map to save <chromosome name, <isoform name, correspondent index in array> >
+    // map to save <chromosome name, <isoform name, correspondent index in a weight array> >
     std::map <string, std::map <string, int> > iso_var_map;
     if (not load_annotation (annotation_full_path_name, global_annotation_map_ptr, iso_var_map)){
         return 0;
     }
     cout << endl;
-    print_iso_var_map (iso_var_map);
+    print_iso_var_map (iso_var_map); // for DEBUG only
     cout << endl;
 
     // FOR DEBUG USE ONLY
     cout << "ANNOTATIONS" << endl;
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
+        cout << "Chromosome: " << chrom_it->first << endl;
         for (auto start_it = chrom_it->second.begin(); start_it!=chrom_it->second.end(); ++start_it){
-            cout << (*start_it->second).exon_id  << " " << (*start_it->second).isoform_id << " - [";
+            cout << "  " << (*start_it->second).exon_id  << " " << (*start_it->second).isoform_id << " - [";
             cout << (*start_it->second).start_pose << "," << (*start_it->second).end_pose << "]" << endl;
             for (auto bam_record_it = (*start_it->second).bam_records.begin(); bam_record_it != (*start_it->second).bam_records.end(); ++bam_record_it){
                 cout << (*bam_record_it)->read_id << " ";

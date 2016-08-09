@@ -106,3 +106,27 @@ std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & r
     }
     return output_map;
 }
+
+// Check if current bam file is indexed (and that index data is loaded into program)
+bool make_index (BamReader & bam_reader){
+    if (not bam_reader.HasIndex()){
+        cout << "Current BAM file isn't indexed" << endl;
+        cout << "Trying to find index files in the same directory" << endl;
+        // Trying to load index data from the filesystem
+        // If BamIndex::STANDARD we are looking for BAI file
+        if (bam_reader.LocateIndex(BamIndex::STANDARD)){
+            cout << "Located and loaded index file from disk" << endl;
+        } else {
+            cout << "Couldn't locate index file" << endl;
+            cout << "Trying to create the new one" << endl;
+            // Trying to create index data ourself
+            // BamIndex::STANDARD - we are trying to create BAI file
+            if (not bam_reader.CreateIndex(BamIndex::STANDARD)){
+                cout << "Cannot create index for current bam file. Exiting" << endl;
+                return false;
+            };
+            cout << "Index file for current BAM file is succesfully created" << endl;
+        }
+    }
+    return true;
+}

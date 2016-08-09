@@ -59,7 +59,7 @@ public:
 
 class Isoform {
 public:
-    int bin; // 0
+    long bin; // 0
     string name; // 1
     string chrom; // 2
     bool strand;  // true - +, false  - - // 3
@@ -67,7 +67,7 @@ public:
     long tx_end; // 5
     long cds_start; // 6
     long cds_end; // 7
-    int exon_count; // 8
+    long exon_count; // 8
 
     vector <long> exon_starts; // not necessary to be sorted // 9
     vector <long> exon_ends; // saves pointers to ends of the exons. not necessary to be sorted // 10
@@ -82,6 +82,9 @@ public:
 
     // Constructor
     Isoform (string line);
+
+    // Empty constructor
+    Isoform ();
 };
 
 bool str_to_cds_stat(const string &value, cds_stat &result);
