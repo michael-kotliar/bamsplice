@@ -2,7 +2,7 @@
 // Created by kot4or on 8/8/16.
 //
 
-#include "include/rpkm_calculation.h"
+#include "rpkm_calculation.h"
 
 
 void print_weight_array (const vector <vector <double> > & weight_array){

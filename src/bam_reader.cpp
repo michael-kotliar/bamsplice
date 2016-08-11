@@ -2,7 +2,7 @@
 // Created by kot4or on 8/8/16.
 //
 
-#include "include/bam_reader.h"
+#include "bam_reader.h"
 
 // CLASS BamRecord
 

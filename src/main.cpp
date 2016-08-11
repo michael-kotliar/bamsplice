@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 
 #include <iomanip>
 
@@ -10,8 +11,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "include/interval_map.h"
-#include "include/rpkm_calculation.h"
+#include "interval_map.h"
+#include "rpkm_calculation.h"
 
 
 using namespace std;
@@ -22,10 +23,24 @@ using namespace BamTools;
 int main(int argc, char **argv) {
 
     // Read the paths from arguments
-    if (argc != 3){
+    if (argc < 3){
         cout << "Set <full path to bam-file> <full path to tab-delimited file>" << endl;
         return 0;
     }
+
+    if (argc == 4){
+        string log_filename = string(argv[3]);
+        cout << "Log file " << log_filename << endl;
+        freopen(log_filename.c_str(), "a", stdout); // TODO Check what happens when filename is not correct
+        time_t t = time(0);   // get time now
+        struct tm * now = localtime( & t );
+        cout << (now->tm_year + 1900) << '-'
+             << (now->tm_mon + 1) << '-'
+             << now->tm_mday << "   "
+             << now->tm_hour << ":" << now->tm_min
+             << endl << endl;
+    }
+
 
     // Set paths to bam and annotation files
     string bam_full_path_name = string(argv[1]);
@@ -40,8 +55,8 @@ int main(int argc, char **argv) {
 
     cout << endl << endl;
 
-    // Create map for storing correspondence between chromosome name and RefId from the BamReader object
     // key - chromosome name, value - <RefId, Length> for corresponding chromosome from the BAM file
+    // TODO chromosome_info_map - saves correspondence between chromosome name and RefId from the BamReader object
     std::map <string, pair <int, int> > chromosome_info_map = get_chromosome_map_info (bam_reader);
 
     print_ref_info (chromosome_info_map); // Only for DEBUG
@@ -51,12 +66,10 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-
     // read from tab delimited file
-
-    // Create map to store all annotation data with the following structure:
-    // < chromosome_key, multimap < exon_start_pose, exon_pointer> >
+    // map < chromosome_key, multimap < exon_start_pose, exon_pointer> >
     // exon_start_pose - is needed for sorting mutlimap by the start pose of exon; we cannot do if we add only pointers
+    // TODO global_annotation_map_ptr - map to store all annotation data from tab delimited file
     std::map <string, multimap <long, GffRecordPtr> > global_annotation_map_ptr;
 
     // map to save <chromosome name, <isoform name, correspondent index in a weight array> >
@@ -73,11 +86,11 @@ int main(int argc, char **argv) {
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
         cout << "Chromosome: " << chrom_it->first << endl;
         for (auto start_it = chrom_it->second.begin(); start_it!=chrom_it->second.end(); ++start_it){
-//            assert (start_it->second.use_count() > 0);
+            assert (start_it->second.use_count() > 0);
             cout << "  " << start_it->second->exon_id  << " " << start_it->second->isoform_id << " - [";
             cout << start_it->second->start_pose << "," << start_it->second->end_pose << "]" << endl;
             for (auto bam_record_it = start_it->second->bam_records.begin(); bam_record_it != start_it->second->bam_records.end(); ++bam_record_it){
-//                assert (bam_record_it->use_count() > 0);
+                assert (bam_record_it->use_count() > 0);
                 cout << bam_record_it->get()->read_id << " ";
             }
         }
@@ -117,7 +130,7 @@ int main(int argc, char **argv) {
         // By default for each current_map_element we add one the corresponding annotation pointer
         interval_map<long, MapElement> gtf_records_splitted;
         for (auto it = chrom_it->second.begin(); it != chrom_it->second.end(); ++it) {
-//            assert (it->second.use_count() > 0);
+            assert (it->second.use_count() > 0);
             MapElement current_map_element;
             current_map_element.gtf_records.push_front(it->second);
             gtf_records_splitted.add( make_pair(interval<long>::closed(it->second->start_pose, it->second->end_pose), current_map_element) );
@@ -135,7 +148,7 @@ int main(int argc, char **argv) {
         for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
             cout << "[" << temp_it->first.lower() << "," << temp_it->first.upper() << "]" << " : ";
             for (auto it = temp_it->second.gtf_records.begin(); it != temp_it->second.gtf_records.end(); ++it) {
-//                assert (it->use_count() > 0);
+                assert (it->use_count() > 0);
                 cout << it->get()->exon_id << " (" << it->get()->isoform_id << "), ";
             }
             cout << endl;
@@ -205,6 +218,7 @@ int main(int argc, char **argv) {
                 continue;
 
             // FOR DEBUG USE ONLY
+
             print_segment_annotation("   stop segment annotation", temp_gtf_records_splitted_it);
 
 

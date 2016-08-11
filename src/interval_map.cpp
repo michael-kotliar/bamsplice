@@ -2,7 +2,7 @@
 // Created by kot4or on 8/8/16.
 //
 
-#include "include/interval_map.h"
+#include "interval_map.h"
 
 
 bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord previous_bam_record, interval_map<long, MapElement>::iterator & current_gtf_records_splitted_it, bool & freeze){

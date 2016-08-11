@@ -1,7 +1,0 @@
-#bin	name	chrom	strand	txStart	txEnd	cdsStart	cdsEnd	exonCount	exonStarts	exonEnds	score	name2	cdsStartStat	cdsEndStat	exonFrames
-100	iso_1	chr_1	+	10	58	10	58	4	10,22,36,50	20,33,47,58	0	CD41	none	none	0,0,0,0
-110	iso_2	chr_1	+	17	58	17	58	3	17,40,50	33,45,58	0	CD42	none	none	0,0,0
-120	iso_3	chr_1	+	22	58	22	58	2	22,36	30,58	0	CD43	none	none	0,0
-130	iso_1	chr_2	+	5	60	5	60	5	5,15,25,45,57	12,20,40,54,60	0	CD44	none	none	0,0,0,0,0
-140	iso_2	chr_2	+	5	60	5	60	3	5,25,45	20,40,60	0	CD45	none	none	0,0,0
-150	iso_3	chr_2	+	5	60	5	60	5	5,15,28,50,57	10,20,37,54,60	0	CD46	none	none	0,0,0,0,0
