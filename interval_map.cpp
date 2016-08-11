@@ -7,6 +7,7 @@
 
 bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord previous_bam_record, interval_map<long, MapElement>::iterator & current_gtf_records_splitted_it, bool & freeze){
     static bool allow_skip_rest;
+    assert (current_bam_record.use_count() > 0);
     if (current_bam_record->read_id == previous_bam_record.read_id and allow_skip_rest){
         freeze = false;
         return false;
@@ -36,6 +37,7 @@ bool find_stop_segment_annotation (BamRecordPtr current_bam_record,
                                    interval_map<long,MapElement>::iterator & temp_gtf_records_splitted_it,
                                    interval_map<long,MapElement>::iterator max_segment_annotation,
                                    bool & freeze){
+    assert (current_bam_record.use_count() > 0);
     while (current_bam_record->end_pose < temp_gtf_records_splitted_it->first.lower() or
            current_bam_record->end_pose > temp_gtf_records_splitted_it->first.upper()){
         // check if we reached the end of the gtf_records array. If true, change go to the next bam_record
@@ -52,7 +54,8 @@ void print_segment_annotation (const string & title, interval_map<long, MapEleme
     cout << title << " " << "[" << current_gtf_records_splitted_it->first.lower() << "," << current_gtf_records_splitted_it->first.upper() << "] :";
     for (auto start_segment_annotation_it = current_gtf_records_splitted_it->second.gtf_records.begin();
          start_segment_annotation_it != current_gtf_records_splitted_it->second.gtf_records.end(); ++start_segment_annotation_it){
-        cout << " " << (*start_segment_annotation_it)->exon_id << " (" << (*start_segment_annotation_it)->isoform_id << ")";
+        assert (start_segment_annotation_it->use_count() > 0);
+        cout << " " << start_segment_annotation_it->get()->exon_id << " (" << start_segment_annotation_it->get()->isoform_id << ")";
     }
     cout << endl;
 }
@@ -68,13 +71,15 @@ set<GffRecordPtr> get_intersection (interval_map<long, MapElement>::iterator inp
     cout << "   Intersection : ";
     for (auto intersection_segment_annotation_it = intersection.begin();
          intersection_segment_annotation_it != intersection.end(); ++intersection_segment_annotation_it){
-        cout << " " << (*intersection_segment_annotation_it)->exon_id << " ("<< (*intersection_segment_annotation_it)->isoform_id << "), ";
+        assert (intersection_segment_annotation_it->use_count() > 0);
+        cout << " " << intersection_segment_annotation_it->get()->exon_id << " ("<< intersection_segment_annotation_it->get()->isoform_id << "), ";
     }
     cout << endl;
     return intersection;
 }
 
 bool fit_spliced_read_condition(const long & current_slice, const long & slice_number, const set <GffAndStartStopIt> & temp_set, BamRecordPtr current_bam_record){
+    assert (temp_set.begin()->annotation.use_count() > 0);
     if (slice_number == 1) return true; // added just in case to make sure that we are not trying ot check unspliced read
     if (current_slice == 1 and temp_set.begin()->annotation->end_pose != current_bam_record->end_pose ) {
         return false;
@@ -104,16 +109,19 @@ bool form_line (const set<GffAndStartStopIt> & complete_input_set){
     if (input_set.size() == 1) return true;
     int counter = 0;
     for (auto it = input_set.begin(); it != input_set.end(); ++it){
-        if ((*it)->previous_gff){
-            auto it_check = input_set.find((*it)->previous_gff);
+        assert (it->use_count() > 0);
+        if (it->get()->previous_gff.use_count() > 0){
+            auto it_check = input_set.find(it->get()->previous_gff);
             if (it_check == input_set.end()) {
-                cout << "for element " << (*it)->exon_id << " from " << (*it)->isoform_id << " cannot find any previous" << endl;
+                cout << "for element " << it->get()->exon_id << " from " << it->get()->isoform_id << " cannot find any previous" << endl;
                 counter++;
             } else{
-                cout << "for element " << (*it)->exon_id << " from " << (*it)->isoform_id << " found previous " << (*it_check)->exon_id << " from " << (*it_check)->isoform_id <<  endl;
+                assert (it_check->use_count() > 0);
+                cout << "for element " << it->get()->exon_id << " from " << it->get()->isoform_id
+                     << " found previous " << it_check->get()->exon_id << " from " << it_check->get()->isoform_id <<  endl;
             }
         } else {
-            cout << "Found first element of isoform: " << (*it)->exon_id << " from " << (*it)->isoform_id << endl;
+            cout << "Found first element of isoform: " << it->get()->exon_id << " from " << it->get()->isoform_id << endl;
             counter++;
         }
     }

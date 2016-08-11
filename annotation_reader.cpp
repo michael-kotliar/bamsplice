@@ -179,7 +179,7 @@ bool load_annotation (const string & full_path_name,
             res.first->second.insert(internal_pair_for_iso_var_map);
         }
 
-        GffRecordPtr previous_annotation;
+        GffRecordPtr previous_annotation; // TODO maybe this is the reason of error. Try to create empty GffRecord object
         previous_annotation.reset();
 
         for (int i = 0; i < current_isoform.exon_count; i++){

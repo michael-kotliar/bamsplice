@@ -73,10 +73,12 @@ int main(int argc, char **argv) {
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
         cout << "Chromosome: " << chrom_it->first << endl;
         for (auto start_it = chrom_it->second.begin(); start_it!=chrom_it->second.end(); ++start_it){
-            cout << "  " << (*start_it->second).exon_id  << " " << (*start_it->second).isoform_id << " - [";
-            cout << (*start_it->second).start_pose << "," << (*start_it->second).end_pose << "]" << endl;
-            for (auto bam_record_it = (*start_it->second).bam_records.begin(); bam_record_it != (*start_it->second).bam_records.end(); ++bam_record_it){
-                cout << (*bam_record_it)->read_id << " ";
+//            assert (start_it->second.use_count() > 0);
+            cout << "  " << start_it->second->exon_id  << " " << start_it->second->isoform_id << " - [";
+            cout << start_it->second->start_pose << "," << start_it->second->end_pose << "]" << endl;
+            for (auto bam_record_it = start_it->second->bam_records.begin(); bam_record_it != start_it->second->bam_records.end(); ++bam_record_it){
+//                assert (bam_record_it->use_count() > 0);
+                cout << bam_record_it->get()->read_id << " ";
             }
         }
     }
@@ -98,7 +100,7 @@ int main(int argc, char **argv) {
         cout << "Found corresponding RefId:  " << ref_id << endl;
         if (not bam_reader.HasIndex()){
             cout << "ERROR: Current bam file isn't indexed" << endl;
-            cout << "EXIT. Find a bug in a code. You suppose to index BAM file after opening" << endl;
+            cout << "EXIT. Find a bug in a code. You suppose to index BAM file right after opening" << endl;
             return 0;
         }
         cout << "Current BAM file is indexed" << endl;
@@ -106,21 +108,19 @@ int main(int argc, char **argv) {
 
         if (not bam_reader.SetRegion(ref_id, 0, ref_id, length)){
             cout << "Cannot set region. Exit" << endl;
-                cout << bam_reader.GetErrorString(); // added just in case
+            cout << bam_reader.GetErrorString(); // added just in case
             return 0;
         }
         cout << "Region from BAM file is succesfully set for chromosome " << chrom << " with RefId = " << ref_id << endl << endl;
 
         // Making an interval map on the base of the annotation.
-        // By default for each current_map_element we add the corresponding annotation pointer
+        // By default for each current_map_element we add one the corresponding annotation pointer
         interval_map<long, MapElement> gtf_records_splitted;
         for (auto it = chrom_it->second.begin(); it != chrom_it->second.end(); ++it) {
-            GffRecordPtr temp_ptr = it->second;
+//            assert (it->second.use_count() > 0);
             MapElement current_map_element;
-            current_map_element.gtf_records.push_front(temp_ptr);
-            gtf_records_splitted.add(make_pair(interval<long>::closed((*it->second).start_pose, (*it->second).end_pose),
-                                               current_map_element)
-            );
+            current_map_element.gtf_records.push_front(it->second);
+            gtf_records_splitted.add( make_pair(interval<long>::closed(it->second->start_pose, it->second->end_pose), current_map_element) );
         }
 
         // create an empty matrix: column - one interval from interval map, row - isoforms
@@ -135,7 +135,8 @@ int main(int argc, char **argv) {
         for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
             cout << "[" << temp_it->first.lower() << "," << temp_it->first.upper() << "]" << " : ";
             for (auto it = temp_it->second.gtf_records.begin(); it != temp_it->second.gtf_records.end(); ++it) {
-                cout << (*it)->exon_id << " (" << (*it)->isoform_id << "), ";
+//                assert (it->use_count() > 0);
+                cout << it->get()->exon_id << " (" << it->get()->isoform_id << "), ";
             }
             cout << endl;
         }
@@ -152,11 +153,13 @@ int main(int argc, char **argv) {
         long slice_number = 1; // if read is spliced slice_number > 1
         long current_slice = 1; // defines the position of cuurent read as a part of a big spliced read
         std::map<string, set<GffAndStartStopIt> > iso_map; // map to arrange annotation according to the isoform key
-        BamRecord previous_bam_record; // temporal pointer to bam record to detect the moment when next bam record isn't a part of big scpliced read
+        BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
         while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
             // Check if gtf records array is already empty. Break the while loop
             if (current_gtf_records_splitted_it == gtf_records_splitted.end()) break;
+
+            assert (current_bam_record.use_count() > 0);
 
             // FOR DEBUG USE ONLY
             cout << endl << "Process read " << current_bam_record->read_id << " [" <<
@@ -209,26 +212,25 @@ int main(int argc, char **argv) {
             // find intersection of two sets
             // we receive set of annotation which is similar between start and end interval map segments
             // in other words we receive pointers to the annotations which includes current bam read
-            set<GffRecordPtr> gff_intersection = get_intersection(current_gtf_records_splitted_it,
-                                                                  temp_gtf_records_splitted_it);
-
+            set<GffRecordPtr> gff_intersection = get_intersection(current_gtf_records_splitted_it, temp_gtf_records_splitted_it);
 
 
             // iteratore over the intersection set
             for (auto gff_it = gff_intersection.begin(); gff_it != gff_intersection.end(); ++gff_it) {
                 set<GffAndStartStopIt> temp_set; // we save only one pointer to this set, but we need to use set, because we want to add it into iso_map
-                temp_set.insert(GffAndStartStopIt (*gff_it, current_gtf_records_splitted_it, temp_gtf_records_splitted_it));
+                GffRecordPtr temp_ptr (*gff_it);
+                temp_set.insert(GffAndStartStopIt (temp_ptr, current_gtf_records_splitted_it, temp_gtf_records_splitted_it));
                 // check if slice_number == 1 which is equal that read isn't spliced or
                 // current annotation fits the condition which are required for specific part of the spliced read (start, middle or end part of spliced read)
                 if (slice_number == 1 or fit_spliced_read_condition(current_slice, slice_number, temp_set, current_bam_record)) {
                     // Add new element into map
                     pair<std::map<string, set<GffAndStartStopIt> >::iterator, bool> ret;
-                    pair<string, set<GffAndStartStopIt> > input_pair((*gff_it)->isoform_id, temp_set);
+                    pair<string, set<GffAndStartStopIt> > input_pair(gff_it->get()->isoform_id, temp_set);
                     ret = iso_map.insert(input_pair);
                     // If already exist with the same isoform key - add annotation to the corresponding set of the map
                     if (ret.second == false) {
                         cout << "Isoform " << input_pair.first << " already exists" << endl;
-                        cout << "Updating the set with a value " << (*gff_it)->exon_id << endl;
+                        cout << "Updating the set with a value " << gff_it->get()->exon_id << endl;
                         ret.first->second.insert(temp_set.begin(), temp_set.end());
                     }
                 }
@@ -272,6 +274,8 @@ int main(int argc, char **argv) {
                         for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it) {
                             gff_it->annotation->bam_records.push_back(current_bam_record);
                             gff_it->annotation->reads_count++;
+                            assert (gff_it->annotation.use_count() > 0);
+                            assert (current_bam_record.use_count() > 0);
                             cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << current_bam_record->read_id << endl;
                             // updated weight array
                             string isoform = gff_it->annotation->isoform_id;
@@ -284,11 +288,11 @@ int main(int argc, char **argv) {
                             cout << "stop_i = " << stop_i << endl;
                             cout << "length = " << horizontal_koef << endl;
                             // FOR DEBUG ONLY
-                            if (((double)global_koef * (double)vertical_koef * (double)horizontal_koef) == 0) {
+                            if ((global_koef * vertical_koef * (double)horizontal_koef) == 0) {
                                 cout << "Something went wrong. Find a bug" << endl;
                                 throw ("Error: dividing by zero");
                             }
-                            double weight = 1 / ((double)global_koef * (double)vertical_koef * (double)horizontal_koef);
+                            double weight = 1 / (global_koef * vertical_koef * (double)horizontal_koef);
                             cout << "global_koef = " << global_koef << endl;
                             cout << "vertical_koef = " << vertical_koef << endl;
                             cout << "horizontal_koef = " << horizontal_koef << endl;

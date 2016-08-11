@@ -46,7 +46,7 @@ public:
     BamRecord ()
             : start_pose (0)
             , end_pose (0)
-            , read_id ("")
+            , read_id (" ")
             , slices (1)
     {}
 
