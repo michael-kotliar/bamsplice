@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
         bool freeze = false; // if true - calling the get_bam_record function return's the same read as it it did it before
         long slice_number = 1; // if read is spliced slice_number > 1
         long current_slice = 1; // defines the position of cuurent read as a part of a big spliced read
-        std::map<string, set<GffAndStartStopIt> > iso_map; // map to arrange annotation according to the isoform key
+        std::map<string, set<GffAndStartStopIt> > iso_map; // map to arrange exons according to the isoform key
         BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
         while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
@@ -273,7 +273,7 @@ int main(int argc, char **argv) {
 
                 // iterating over the isoforms from iso_map to fill exons' data
                 for (auto map_iterator = iso_map.begin(); map_iterator != iso_map.end(); map_iterator++) {
-                    // if current isoform has the same number of annotation as number of parts from the spliced read
+                    // if current isoform has the same number of exons as number of parts from the spliced read
                     // we caught the correct spliced read
                     // if not - go to next isoform
                     if (map_iterator->second.size() == slice_number) {
@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
                             cout << "j = " << j << endl;
                             long start_i = distance (gtf_records_splitted.begin(), gff_it->start_it);
                             long stop_i = distance (gtf_records_splitted.begin(), gff_it->stop_it);
-                            long horizontal_koef = distance (gff_it->start_it, gff_it->stop_it) + 1;
+                            long horizontal_koef = distance (gff_it->start_it, gff_it->stop_it) + 1; // defines the weight koef if read occupies few intervals of some exon
                             cout << "start_i = " << start_i << endl;
                             cout << "stop_i = " << stop_i << endl;
                             cout << "length = " << horizontal_koef << endl;
@@ -306,7 +306,14 @@ int main(int argc, char **argv) {
                                 cout << "Something went wrong. Find a bug" << endl;
                                 throw ("Error: dividing by zero");
                             }
-                            double weight = 1 / (global_koef * vertical_koef * (double)horizontal_koef);
+                            double weight = 0;
+                            // if read was spliced (global_koef > 1) or read belongs to two or more isoforms (vertical_koef > 1), than calculate the weight
+                            // if not - leave weight equal to 0
+                            // if we we want to take into account if read occupies two or intervals we can additionally check (horizontal_koef > 1),
+                            // but don't think it's necessary
+                            if (global_koef > 1 or vertical_koef > 1){
+                                weight = 1 / (global_koef * vertical_koef * (double)horizontal_koef);
+                            }
                             cout << "global_koef = " << global_koef << endl;
                             cout << "vertical_koef = " << vertical_koef << endl;
                             cout << "horizontal_koef = " << horizontal_koef << endl;

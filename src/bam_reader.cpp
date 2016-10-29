@@ -80,9 +80,9 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool fre
 void print_ref_info (const std::map <string, pair <int, int> > & info_map){
     cout << "PRINT REFERENCE DATA FORM BAM FILE" << endl;
     for (auto it = info_map.begin(); it != info_map.end(); ++it){
-        cout << "Chromosome: " << it->first << endl;
-        cout << "RefId: " << it->second.first << endl;
-        cout << "Length: " << it->second.second << endl;
+        cout << "  Chromosome: " << it->first << endl;
+        cout << "  RefId: " << it->second.first << endl;
+        cout << "  Length: " << it->second.second << endl;
         cout << endl;
     }
 }
