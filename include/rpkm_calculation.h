@@ -13,4 +13,4 @@
 
 using namespace std;
 
-void print_weight_array (const vector <vector <double> > & weight_array);
+void print_array(const vector<vector<double> > &weight_array);

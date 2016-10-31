@@ -169,7 +169,7 @@ bool load_annotation (const string & full_path_name,
         }
 
 
-        pair <string, int> internal_pair_for_iso_var_map (current_isoform.name, iso_var_map[current_isoform.chrom].size());
+        pair <string, int> internal_pair_for_iso_var_map (current_isoform.name, iso_var_map[current_isoform.chrom].size()+1);
         std::map <string, int> internal_iso_var_map;
         internal_iso_var_map.insert(internal_pair_for_iso_var_map);
         pair <std::map <string, std::map <string, int> >::iterator, bool> res;

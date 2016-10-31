@@ -137,9 +137,19 @@ int main(int argc, char **argv) {
         }
 
         // create an empty matrix: column - one interval from interval map, row - isoforms
-        vector <vector <double> > weight_array (gtf_records_splitted.iterative_size(), vector <double> (iso_var_map[chrom].size(), 0));
+        vector <vector <double> > weight_array (iso_var_map[chrom].size()+1, vector <double> (gtf_records_splitted.iterative_size(), -1));
+
+        // Set the length of intervals into the first line of weight_array
+        int temp_n = 0;
+        for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
+            weight_array[0][temp_n] = temp_it->first.upper() - temp_it->first.lower();
+            temp_n++;
+        }
+
+
+
         // FOR DEBUG ONLY
-        print_weight_array (weight_array);
+//        print_array (weight_array);
 
 
 
@@ -319,7 +329,10 @@ int main(int argc, char **argv) {
                             cout << "horizontal_koef = " << horizontal_koef << endl;
                             cout << "weight = " << weight << endl;
                             for (int i = start_i; i <= stop_i; i++) {
-                                    weight_array[i][j] += weight;
+                                if (weight_array[j][i] == -1){
+                                    weight_array[j][i] = 0;
+                                }
+                                weight_array[j][i] += weight;
                             }
                         }
                     }
@@ -327,13 +340,12 @@ int main(int argc, char **argv) {
                 // at the end of the iteration over the isoform map, we need to revert value of current_gtf_records_splitted_it
                 // from its backup version
                 current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it; // get iterator from the backup
-                print_weight_array (weight_array);
             }
             // set freeze to false to get new read from the bam file when calling function get_bam_record
             freeze = false;
 
         }
-
+        print_array(weight_array);
     }
 
     // FOR DEBUG USE ONLY
