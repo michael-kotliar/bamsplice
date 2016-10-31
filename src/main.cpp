@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
 
 
         // FOR DEBUG ONLY
-//        print_array (weight_array);
+//        print_weight_array (weight_array);
 
 
 
@@ -345,7 +345,10 @@ int main(int argc, char **argv) {
             freeze = false;
 
         }
-        print_array(weight_array);
+        print_weight_array(weight_array, "Weight array");
+        transform_to_density (weight_array);
+        print_weight_array(weight_array, "Density array");
+
     }
 
     // FOR DEBUG USE ONLY
