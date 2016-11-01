@@ -7,6 +7,8 @@
 #include <set>
 #include <map>
 
+#include <string.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
@@ -14,21 +16,28 @@
 #include "interval_map.h"
 #include "rpkm_calculation.h"
 
+#include "test.h"
+
 
 using namespace std;
 using namespace boost::icl;
 using namespace BamTools;
 
+bool test_mode = false;
 
 int main(int argc, char **argv) {
-
     // Read the paths from arguments
     if (argc < 3){
         cout << "Set <full path to bam-file> <full path to tab-delimited file>" << endl;
         return 0;
     }
 
-    if (argc == 4){
+    // if put --test instead of path to the log file
+    if ( argc > 3 && string(argv[3]) == "--test" ){
+        test_mode = true;
+    }
+
+    if (argc > 3 && (!test_mode) ){
         string log_filename = string(argv[3]);
         cout << "Log file " << log_filename << endl;
         freopen(log_filename.c_str(), "a", stdout); // TODO Check what happens when filename is not correct
@@ -319,14 +328,7 @@ int main(int argc, char **argv) {
                                 cout << "Something went wrong. Find a bug" << endl;
                                 throw ("Error: dividing by zero");
                             }
-                            double weight = 0;
-                            // if read was spliced (global_koef > 1) or read belongs to two or more isoforms (vertical_koef > 1), than calculate the weight
-                            // if not - leave weight equal to 0
-                            // if we we want to take into account if read occupies two or intervals we can additionally check (horizontal_koef > 1),
-                            // but don't think it's necessary
-//                            if (global_koef > 1 or vertical_koef > 1){
-                                weight = 1 / (global_koef * vertical_koef * (double)horizontal_koef);
-//                            }
+                            double weight = 1 / (global_koef * vertical_koef * (double)horizontal_koef);
                             cout << "global_koef = " << global_koef << endl;
                             cout << "vertical_koef = " << vertical_koef << endl;
                             cout << "horizontal_koef = " << horizontal_koef << endl;
@@ -346,6 +348,7 @@ int main(int argc, char **argv) {
 
         }
         print_weight_array(weight_array, "Weight array");
+        if ( test_mode ) print_weight_array_test (weight_array, "Weight array");
         transform_to_density (weight_array);
         print_weight_array(weight_array, "Density array");
 
