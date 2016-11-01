@@ -136,17 +136,20 @@ int main(int argc, char **argv) {
             gtf_records_splitted.add( make_pair(interval<long>::closed(it->second->start_pose, it->second->end_pose), current_map_element) );
         }
 
-        // create an empty matrix: column - one interval from interval map, row - isoforms
+        // create an empty matrix: column - one interval from interval map, row - isoforms, initialize it with -1
         vector <vector <double> > weight_array (iso_var_map[chrom].size()+1, vector <double> (gtf_records_splitted.iterative_size(), -1));
 
         // Set the length of intervals into the first line of weight_array
+        // put 0 instead of -1 in all of the intervals that have exons
         int temp_n = 0;
         for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
             weight_array[0][temp_n] = temp_it->first.upper() - temp_it->first.lower();
+            for (auto  gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it){
+                GffRecordPtr temp_gtf_ptr (*gtf_it);
+                weight_array [ iso_var_map[chrom][temp_gtf_ptr->isoform_id] ] [temp_n] = 0;
+            }
             temp_n++;
         }
-
-
 
         // FOR DEBUG ONLY
 //        print_weight_array (weight_array);
@@ -239,7 +242,7 @@ int main(int argc, char **argv) {
             set<GffRecordPtr> gff_intersection = get_intersection(current_gtf_records_splitted_it, temp_gtf_records_splitted_it);
 
 
-            // iteratore over the intersection set
+            // iterate over the intersection set
             for (auto gff_it = gff_intersection.begin(); gff_it != gff_intersection.end(); ++gff_it) {
                 set<GffAndStartStopIt> temp_set; // we save only one pointer to this set, but we need to use set, because we want to add it into iso_map
                 GffRecordPtr temp_ptr (*gff_it);
@@ -321,17 +324,14 @@ int main(int argc, char **argv) {
                             // if not - leave weight equal to 0
                             // if we we want to take into account if read occupies two or intervals we can additionally check (horizontal_koef > 1),
                             // but don't think it's necessary
-                            if (global_koef > 1 or vertical_koef > 1){
+//                            if (global_koef > 1 or vertical_koef > 1){
                                 weight = 1 / (global_koef * vertical_koef * (double)horizontal_koef);
-                            }
+//                            }
                             cout << "global_koef = " << global_koef << endl;
                             cout << "vertical_koef = " << vertical_koef << endl;
                             cout << "horizontal_koef = " << horizontal_koef << endl;
                             cout << "weight = " << weight << endl;
                             for (int i = start_i; i <= stop_i; i++) {
-                                if (weight_array[j][i] == -1){
-                                    weight_array[j][i] = 0;
-                                }
                                 weight_array[j][i] += weight;
                             }
                         }
