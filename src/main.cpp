@@ -146,11 +146,11 @@ int main(int argc, char **argv) {
         }
 
         // create an empty matrix: column - one interval from interval map, row - isoforms, initialize it with -1
-        vector <vector <double> > weight_array (iso_var_map[chrom].size()+1, vector <double> (gtf_records_splitted.iterative_size(), -1));
+        vector <vector <double> > weight_array (iso_var_map[chrom].size()+1, vector <double> (gtf_records_splitted.iterative_size(), 0));
 
         // Set the length of intervals into the first line of weight_array
         // put 0 instead of -1 in all of the intervals that have exons
-        double min_weight = 1.0e-9;
+        double min_weight = 1.0e-29; // TODO put it as argument
 
         int temp_n = 0;
         for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
         transform_to_density (weight_array);
         print_weight_array(weight_array, "Density array");
 
-        run_cycle (weight_array);
+        int cycles = run_cycle (weight_array);
         print_weight_array(weight_array, "Final array");
 
 
