@@ -150,12 +150,14 @@ int main(int argc, char **argv) {
 
         // Set the length of intervals into the first line of weight_array
         // put 0 instead of -1 in all of the intervals that have exons
+        double min_weight = 1.0e-9;
+
         int temp_n = 0;
         for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
             weight_array[0][temp_n] = temp_it->first.upper() - temp_it->first.lower();
             for (auto  gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it){
                 GffRecordPtr temp_gtf_ptr (*gtf_it);
-                weight_array [ iso_var_map[chrom][temp_gtf_ptr->isoform_id] ] [temp_n] = 0;
+                weight_array [ iso_var_map[chrom][temp_gtf_ptr->isoform_id] ] [temp_n] = min_weight;
             }
             temp_n++;
         }
@@ -347,10 +349,20 @@ int main(int argc, char **argv) {
             freeze = false;
 
         }
-        print_weight_array(weight_array, "Weight array");
+
         if ( test_mode ) print_weight_array_test (weight_array, "Weight array");
+
+
+        // Original weight array
+        print_weight_array(weight_array, "Weight array");
+
+        // Transormed to density
         transform_to_density (weight_array);
         print_weight_array(weight_array, "Density array");
+
+        run_cycle (weight_array);
+        print_weight_array(weight_array, "Final array");
+
 
     }
 
