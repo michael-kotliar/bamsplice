@@ -208,8 +208,6 @@ void calculate_totReads_density (const vector<vector<double> > & weight_array, s
         int index = iso_it->second.index;
         for (int j = 0; j < weight_array[index].size(); j++) {
             if (weight_array[index][j] != 0){
-//                cout << "weight_array[" << index << "][" << j << "]: " << weight_array[index][j] << endl;
-//                cout << "weight_array[0][" << j << "]: " << weight_array[0][j] << endl;
                 iso_it->second.total_reads += round (weight_array[index][j] * weight_array[0][j]);
             }
         }

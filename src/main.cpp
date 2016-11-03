@@ -293,6 +293,10 @@ int main(int argc, char **argv) {
                     } else {
                         continue;
                     }
+                    if (not read_is_counted){
+                        mapped_reads_counter++; // Total number of all mapped reads;
+                        read_is_counted = true;
+                    }
                     vertical_koef++;
                 }
 
@@ -316,12 +320,6 @@ int main(int argc, char **argv) {
                             gff_it->annotation->reads_count++;
                             assert (gff_it->annotation.use_count() > 0);
                             assert (current_bam_record.use_count() > 0);
-
-                            if (not read_is_counted){
-                                mapped_reads_counter++; // Total number of all mapped reads;
-                                read_is_counted = true;
-                            }
-
                             cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << current_bam_record->read_id << endl;
                             // updated weight array
                             string isoform = gff_it->annotation->isoform_id;
