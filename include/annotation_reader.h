@@ -5,6 +5,8 @@
 #include "bam_reader.h"
 #include "string_tools.h"
 #include <iomanip>
+#include <iostream>
+#include <fstream>
 
 
 
@@ -96,6 +98,7 @@ public:
 bool str_to_cds_stat(const string &value, cds_stat &result);
 
 void print_iso_var_map (const std::map <string, std::map <string, Isoform> > & iso_var_map);
+void print_iso_var_map_to_file (const std::map <string, std::map <string, Isoform> > & iso_var_map, const string path);
 
 // global_annotation_map_ptr : key - chromosome name, value - multimap of annotations, sorted by not-unique key - start pose of annotation
 // NOTE : forward list of annotations should be sorted by start pose with rule a<b

@@ -384,7 +384,7 @@ int main(int argc, char **argv) {
 
     calculate_rpkm (iso_var_map, mapped_reads_counter);
     print_iso_var_map (iso_var_map);
-
+    print_iso_var_map_to_file (iso_var_map, "/Users/kot4or/cchmc/geep/testing_data/biowardrobe_3659_rna_seq_single_reads/geep_generated/output.txt"); // TODO put the path to output file as argument
 
     cout << endl << "RESULTS" << endl;
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
