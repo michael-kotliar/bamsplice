@@ -23,6 +23,17 @@ using namespace BamTools;
 class BamRecord;
 typedef boost::shared_ptr<BamRecord> BamRecordPtr;
 
+struct BamGeneralInfo {
+    long total;
+    long not_aligned;
+    BamGeneralInfo ():
+            total (0),
+            not_aligned (0)
+    {
+    }
+};
+
+
 // CLASSes
 
 // to save current read
@@ -57,11 +68,13 @@ public:
 
 list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment);
 
-bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int & total_reads_counter, bool freeze = false);
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, BamGeneralInfo & bam_general_info, bool freeze = false);
 
 void print_ref_info (const std::map <string, pair <int, int> > & info_map);
 
 std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & reader);
 
 bool make_index (BamReader & bam_reader);
+bool flag_check (const BamAlignment & al, BamGeneralInfo & bam_general_info);
+
 

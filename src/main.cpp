@@ -105,8 +105,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    int mapped_reads_counter = 0; // Counter for total number of mapped reads during all experiment
-    int total_reads_counter = 0;
+    BamGeneralInfo bam_general_info;
 
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it) {
 
@@ -194,7 +193,7 @@ int main(int argc, char **argv) {
         std::map<string, set<GffAndStartStopIt> > iso_map; // map to arrange exons according to the isoform key
         BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
-        while (get_bam_record(bam_reader, current_bam_record, total_reads_counter, freeze)) { // Check if I can get new record from BAM file
+        while (get_bam_record(bam_reader, current_bam_record, bam_general_info, freeze)) { // Check if I can get new record from BAM file
             // Check if gtf records array is already empty. Break the while loop
             if (current_gtf_records_splitted_it == gtf_records_splitted.end()) break;
 
@@ -284,7 +283,6 @@ int main(int argc, char **argv) {
                 // iterating over the isoforms from iso_map to get divider
                 double global_koef = slice_number; // defines the weight koef of each slice of the spliced read
                 double vertical_koef = 0; // defines the weight koef if read is aligned on few isoforms
-                bool read_is_counted = false;
                 for (auto map_iterator = iso_map.begin(); map_iterator != iso_map.end(); map_iterator++) {
                     if (map_iterator->second.size() == slice_number){
                         if (not form_line (map_iterator->second)) {
@@ -292,10 +290,6 @@ int main(int argc, char **argv) {
                         }
                     } else {
                         continue;
-                    }
-                    if (not read_is_counted){
-                        mapped_reads_counter++; // Total number of all mapped reads;
-                        read_is_counted = true;
                     }
                     vertical_koef++;
                 }
@@ -360,31 +354,29 @@ int main(int argc, char **argv) {
 
 
         // Original weight array
-        print_weight_array(weight_array, "Weight array");
+        print_weight_array(weight_array, "Original weight array");
 
         // Transormed to density
         transform_to_density (weight_array);
-        print_weight_array(weight_array, "Density array");
+        print_weight_array(weight_array, "Original density array");
 
         int cycles = run_cycle (weight_array);
-        print_weight_array(weight_array, "Final array");
-
+        print_weight_array(weight_array, "Final density array");
+        cout << endl;
         calculate_totReads_density (weight_array, iso_var_map[chrom]);
-        print_iso_var_map (iso_var_map);
-
-
+        cout << endl << endl;
 
 
     }
 
     // FOR DEBUG USE ONLY
 
-    cout << "mapped_reads_counter: " << mapped_reads_counter <<endl;
-    cout << "total_reads_counter: " << total_reads_counter << endl;
+    cout << "mapped_reads_counter: " << bam_general_info.total - bam_general_info.not_aligned <<endl;
+    cout << "total_reads_counter: " << bam_general_info.total << endl;
 
-    calculate_rpkm (iso_var_map, mapped_reads_counter);
+    calculate_rpkm (iso_var_map, bam_general_info.total - bam_general_info.not_aligned);
     print_iso_var_map (iso_var_map);
-    print_iso_var_map_to_file (iso_var_map, "/Users/kot4or/cchmc/geep/testing_data/biowardrobe_3659_rna_seq_single_reads/geep_generated/output.txt"); // TODO put the path to output file as argument
+    print_iso_var_map_to_file (iso_var_map, "/Users/kot4or/cchmc/geep/testing_data/set_chrm10/output.txt"); // TODO put the path to output file as argument
 
     cout << endl << "RESULTS" << endl;
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
