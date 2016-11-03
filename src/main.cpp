@@ -13,7 +13,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "interval_map.h"
+//#include "interval_map.h"
 #include "rpkm_calculation.h"
 
 #include "test.h"
@@ -81,8 +81,8 @@ int main(int argc, char **argv) {
     // TODO global_annotation_map_ptr - map to store all annotation data from tab delimited file
     std::map <string, multimap <long, GffRecordPtr> > global_annotation_map_ptr;
 
-    // map to save <chromosome name, <isoform name, correspondent index in a weight array> >
-    std::map <string, std::map <string, int> > iso_var_map;
+    // map to save <chromosome name, <isoform name, correspondent Isoform object> >
+    std::map <string, std::map <string, Isoform> > iso_var_map;
     if (not load_annotation (annotation_full_path_name, global_annotation_map_ptr, iso_var_map)){
         return 0;
     }
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
             weight_array[0][temp_n] = temp_it->first.upper() - temp_it->first.lower();
             for (auto  gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it){
                 GffRecordPtr temp_gtf_ptr (*gtf_it);
-                weight_array [ iso_var_map[chrom][temp_gtf_ptr->isoform_id] ] [temp_n] = min_weight;
+                weight_array [ iso_var_map[chrom][temp_gtf_ptr->isoform_id].index ] [temp_n] = min_weight;
             }
             temp_n++;
         }
@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
             if (previous_bam_record.read_id != current_bam_record->read_id) {
                 current_slice = 1;
                 iso_map.clear();
-                backup_current_gtf_records_splitted_it = current_gtf_records_splitted_it; // update the buckup for gff iterator
+                backup_current_gtf_records_splitted_it = current_gtf_records_splitted_it; // update the backup for gff iterator
                 cout << "iso_map is cleared" << endl;
             }
 
@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
                             cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << current_bam_record->read_id << endl;
                             // updated weight array
                             string isoform = gff_it->annotation->isoform_id;
-                            int j = iso_var_map[chrom][isoform];
+                            int j = iso_var_map[chrom][isoform].index;
                             cout << "j = " << j << endl;
                             long start_i = distance (gtf_records_splitted.begin(), gff_it->start_it);
                             long stop_i = distance (gtf_records_splitted.begin(), gff_it->stop_it);
@@ -363,10 +363,20 @@ int main(int argc, char **argv) {
         int cycles = run_cycle (weight_array);
         print_weight_array(weight_array, "Final array");
 
+        calculate_totReads_density (weight_array, iso_var_map[chrom]);
+        print_iso_var_map (iso_var_map);
+
+
+
 
     }
 
     // FOR DEBUG USE ONLY
+
+
+    calculate_rpkm (iso_var_map);
+    print_iso_var_map (iso_var_map);
+
 
     cout << endl << "RESULTS" << endl;
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){

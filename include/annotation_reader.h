@@ -4,6 +4,8 @@
 
 #include "bam_reader.h"
 #include "string_tools.h"
+#include <iomanip>
+
 
 
 #ifndef TEST_1_ANNOTATION_READER_H
@@ -68,7 +70,11 @@ public:
     long cds_start; // 6
     long cds_end; // 7
     long exon_count; // 8
-
+    long length; // length of isofom = sum of all exons' lengths
+    int total_reads; // total number of reads in isoform
+    double density; // total_reads/length
+    double rpkm; // rpkm
+    long index; // index that will be used in weigth array to save reads there
     vector <long> exon_starts; // not necessary to be sorted // 9
     vector <long> exon_ends; // saves pointers to ends of the exons. not necessary to be sorted // 10
     vector <long> exon_frames; // pointers to exon frames, not necessary to be sorted // 15
@@ -89,10 +95,10 @@ public:
 
 bool str_to_cds_stat(const string &value, cds_stat &result);
 
-void print_iso_var_map (const std::map <string, std::map <string, int> > & iso_var_map);
+void print_iso_var_map (const std::map <string, std::map <string, Isoform> > & iso_var_map);
 
 // global_annotation_map_ptr : key - chromosome name, value - multimap of annotations, sorted by not-unique key - start pose of annotation
 // NOTE : forward list of annotations should be sorted by start pose with rule a<b
 bool load_annotation (const string & full_path_name,
                       std::map <string, multimap <long, GffRecordPtr> > & global_annotation_map_ptr,
-                      std::map <string, std::map <string, int> > & iso_var_map);
+                      std::map <string, std::map <string, Isoform> > & iso_var_map);

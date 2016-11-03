@@ -187,7 +187,6 @@ int run_cycle (vector <vector <double> > & weight_array){
     }
 
     cout << "Cycles: " << cycles << endl;
-
     return cycles;
 }
 
@@ -203,3 +202,25 @@ void print_array (const vector <double> & intput_array, const string & title, st
 }
 
 
+void calculate_totReads_density (const vector<vector<double> > & weight_array, std::map <string, Isoform> & iso_map){
+
+    for (auto iso_it = iso_map.begin(); iso_it != iso_map.end(); ++iso_it) {
+        int index = iso_it->second.index;
+        for (int j = 0; j < weight_array[index].size(); j++) {
+            if (weight_array[index][j] != 0){
+//                cout << "weight_array[" << index << "][" << j << "]: " << weight_array[index][j] << endl;
+//                cout << "weight_array[0][" << j << "]: " << weight_array[0][j] << endl;
+                iso_it->second.total_reads += round (weight_array[index][j] * weight_array[0][j]);
+            }
+        }
+        iso_it->second.density = 1000 * (double)iso_it->second.total_reads / iso_it->second.length;
+    }
+}
+
+void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map) {
+    for (auto chrom_it = iso_var_map.begin(); chrom_it != iso_var_map.end(); ++chrom_it) {
+        for (auto iso_it = chrom_it->second.begin(); iso_it !=  chrom_it->second.end(); ++iso_it) {
+//            iso_it->second.rpkm = iso_it->second.density / (mapped_count / 1000000);
+        }
+    }
+}

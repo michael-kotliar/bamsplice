@@ -26,7 +26,26 @@ void Isoform::print (){
     cout << "cds_end_stat: " << cds_end_stat << endl;
 }
 
-Isoform::Isoform (string line){
+Isoform::Isoform (string line):
+         bin (0)
+        ,name ("")
+        ,chrom("")
+        ,strand(true)
+        ,tx_start(0)
+        ,tx_end(0)
+        ,cds_start(0)
+        ,cds_end(0)
+        ,exon_count(0)
+        ,length (0)
+        ,total_reads(0)
+        ,density(0)
+        ,rpkm(0)
+        ,index(0)
+        ,score(0)
+        ,name2("")
+        ,cds_start_stat (cds_stat::none)
+        ,cds_end_stat (cds_stat::none)
+{
     vector<string> line_splitted = split_line(line);
 
     // BIN
@@ -107,10 +126,31 @@ Isoform::Isoform (string line){
         throw ("Isoform class constructor fail");
     };
 
+    // calculating the length of isiform as sum of all exons' lengths
+    for (int i = 0; i < exon_count; i++){
+        length += (long)(exon_ends[i] - exon_starts[i]);
+    }
+
 }
 
 Isoform::Isoform ():
-         cds_start_stat (cds_stat::none)
+        bin (0)
+        ,name ("")
+        ,chrom("")
+        ,strand(true)
+        ,tx_start(0)
+        ,tx_end(0)
+        ,cds_start(0)
+        ,cds_end(0)
+        ,exon_count(0)
+        ,length (0)
+        ,total_reads(0)
+        ,density(0)
+        ,rpkm(0)
+        ,index(0)
+        ,score(0)
+        ,name2("")
+        ,cds_start_stat (cds_stat::none)
         ,cds_end_stat (cds_stat::none)
 {
 
@@ -136,11 +176,22 @@ bool str_to_cds_stat(const string &value, cds_stat &result){
     return true;
 }
 
-void print_iso_var_map (const std::map <string, std::map <string, int> > & iso_var_map){
+void print_iso_var_map (const std::map <string, std::map <string, Isoform> > & iso_var_map){
     for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
         cout << "Chromosome: " << ext_it->first << endl;
         for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
-            cout << "  isoform: " << int_it->first << " index: " << int_it->second << endl;
+            cout << setw(10) << "  isoform: "
+                 << setw(15) << int_it->first
+                 << setw(10) << " index: "
+                 << setw(3) << int_it->second.index
+                 << setw(10) << " length: "
+                 << setw(5) << int_it->second.length
+                 << setw(15) << " total_reads: "
+                 << setw(5) << int_it->second.total_reads
+                 << setw(10) << " density: "
+                 << setw(15) << int_it->second.density
+                 << setw(10) << " rpkm: "
+                 << setw(5) << int_it->second.rpkm << endl;
         }
     }
 }
@@ -149,7 +200,7 @@ void print_iso_var_map (const std::map <string, std::map <string, int> > & iso_v
 // NOTE : forward list of annotations should be sorted by start pose with rule a<b
 bool load_annotation (const string & full_path_name,
                       std::map <string, multimap <long, GffRecordPtr> > & global_annotation_map_ptr,
-                      std::map <string, std::map <string, int> > & iso_var_map){
+                      std::map <string, std::map <string, Isoform> > & iso_var_map){
     ifstream input_stream (full_path_name);
     if (!input_stream) {
         cout << "Cannot open file " << full_path_name << endl;
@@ -168,12 +219,12 @@ bool load_annotation (const string & full_path_name,
             continue;
         }
 
-
-        pair <string, int> internal_pair_for_iso_var_map (current_isoform.name, iso_var_map[current_isoform.chrom].size()+1);
-        std::map <string, int> internal_iso_var_map;
+        current_isoform.index = iso_var_map[current_isoform.chrom].size()+1;
+        pair <string, Isoform> internal_pair_for_iso_var_map (current_isoform.name, current_isoform);
+        std::map <string, Isoform> internal_iso_var_map;
         internal_iso_var_map.insert(internal_pair_for_iso_var_map);
-        pair <std::map <string, std::map <string, int> >::iterator, bool> res;
-        pair <string, std::map <string, int> > external_pair_for_iso_var_map (current_isoform.chrom, internal_iso_var_map);
+        pair <std::map <string, std::map <string, Isoform> >::iterator, bool> res;
+        pair <string, std::map <string, Isoform> > external_pair_for_iso_var_map (current_isoform.chrom, internal_iso_var_map);
         res = iso_var_map.insert (external_pair_for_iso_var_map);
         if (res.second == false){
             res.first->second.insert(internal_pair_for_iso_var_map);
