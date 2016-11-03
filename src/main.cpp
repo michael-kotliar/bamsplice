@@ -105,6 +105,8 @@ int main(int argc, char **argv) {
         }
     }
 
+    int mapped_reads_counter = 0; // Counter for total number of mapped reads during all experiment
+    int total_reads_counter = 0;
 
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it) {
 
@@ -192,7 +194,7 @@ int main(int argc, char **argv) {
         std::map<string, set<GffAndStartStopIt> > iso_map; // map to arrange exons according to the isoform key
         BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
-        while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
+        while (get_bam_record(bam_reader, current_bam_record, total_reads_counter, freeze)) { // Check if I can get new record from BAM file
             // Check if gtf records array is already empty. Break the while loop
             if (current_gtf_records_splitted_it == gtf_records_splitted.end()) break;
 
@@ -279,10 +281,10 @@ int main(int argc, char **argv) {
             // If we reached the end of the big spliced read (equal to current_slice > slice_number)
             // In case of unspliced read slice_number = 1 and current_slice will be 2 after incrementing in the previous line
             if (current_slice > slice_number) {
-
                 // iterating over the isoforms from iso_map to get divider
                 double global_koef = slice_number; // defines the weight koef of each slice of the spliced read
                 double vertical_koef = 0; // defines the weight koef if read is aligned on few isoforms
+                bool read_is_counted = false;
                 for (auto map_iterator = iso_map.begin(); map_iterator != iso_map.end(); map_iterator++) {
                     if (map_iterator->second.size() == slice_number){
                         if (not form_line (map_iterator->second)) {
@@ -314,6 +316,12 @@ int main(int argc, char **argv) {
                             gff_it->annotation->reads_count++;
                             assert (gff_it->annotation.use_count() > 0);
                             assert (current_bam_record.use_count() > 0);
+
+                            if (not read_is_counted){
+                                mapped_reads_counter++; // Total number of all mapped reads;
+                                read_is_counted = true;
+                            }
+
                             cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << current_bam_record->read_id << endl;
                             // updated weight array
                             string isoform = gff_it->annotation->isoform_id;
@@ -373,8 +381,10 @@ int main(int argc, char **argv) {
 
     // FOR DEBUG USE ONLY
 
+    cout << "mapped_reads_counter: " << mapped_reads_counter <<endl;
+    cout << "total_reads_counter: " << total_reads_counter << endl;
 
-    calculate_rpkm (iso_var_map);
+    calculate_rpkm (iso_var_map, mapped_reads_counter);
     print_iso_var_map (iso_var_map);
 
 

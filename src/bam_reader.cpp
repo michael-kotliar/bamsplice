@@ -52,7 +52,7 @@ list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignmen
 
 
 // Gets the new read fro the BAM file through BamReader object
-bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze){
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int & total_reads_counter, bool freeze){
     static list <BamRecordPtr> saved_reads; // save all of single reads, which we got from the spliced read
 
     if (freeze and bam_record){
@@ -66,6 +66,7 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool fre
     }
     BamAlignment current_alignment;
     if (bam_reader.GetNextAlignment(current_alignment)){
+        total_reads_counter++;
         saved_reads = split_to_single_reads (current_alignment);
         bam_record = saved_reads.front();
         saved_reads.pop_front();

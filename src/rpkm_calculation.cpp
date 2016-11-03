@@ -217,10 +217,10 @@ void calculate_totReads_density (const vector<vector<double> > & weight_array, s
     }
 }
 
-void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map) {
+void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map, const int & mapped_reads_counter) {
     for (auto chrom_it = iso_var_map.begin(); chrom_it != iso_var_map.end(); ++chrom_it) {
         for (auto iso_it = chrom_it->second.begin(); iso_it !=  chrom_it->second.end(); ++iso_it) {
-//            iso_it->second.rpkm = iso_it->second.density / (mapped_count / 1000000);
+            iso_it->second.rpkm = iso_it->second.density / ((double)mapped_reads_counter / (double)1000000);
         }
     }
 }

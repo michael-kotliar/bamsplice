@@ -57,7 +57,7 @@ public:
 
 list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment);
 
-bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze = false);
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int & total_reads_counter, bool freeze = false);
 
 void print_ref_info (const std::map <string, pair <int, int> > & info_map);
 
