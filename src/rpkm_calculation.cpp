@@ -176,7 +176,7 @@ int run_cycle (vector <vector <double> > & weight_array){
         cout << endl;
 
         cycles++;
-
+        cerr << "Cycle: " << cycles << "\r";
         subtract_matrix(tmp_matrix, weight_array);
 
         if( sum_all (tmp_matrix) < cutoff ){

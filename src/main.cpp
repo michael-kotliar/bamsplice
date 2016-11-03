@@ -50,6 +50,10 @@ int main(int argc, char **argv) {
              << endl << endl;
     }
 
+    string results_path = "";
+    if (argc > 4 && (!test_mode) ){
+        results_path = string (argv[4]);
+    }
 
     // Set paths to bam and annotation files
     string bam_full_path_name = string(argv[1]);
@@ -193,7 +197,17 @@ int main(int argc, char **argv) {
         std::map<string, set<GffAndStartStopIt> > iso_map; // map to arrange exons according to the isoform key
         BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
+        cerr << "Processing reads" << endl;
+        int reads_tem_count = 0;
         while (get_bam_record(bam_reader, current_bam_record, bam_general_info, freeze)) { // Check if I can get new record from BAM file
+            reads_tem_count++;
+            if (reads_tem_count % 1000 == 0){
+                cerr << "*";
+            }
+            if (reads_tem_count > 3000){
+                cerr << "\r";
+                reads_tem_count = 0;
+            }
             // Check if gtf records array is already empty. Break the while loop
             if (current_gtf_records_splitted_it == gtf_records_splitted.end()) break;
 
@@ -360,7 +374,9 @@ int main(int argc, char **argv) {
         transform_to_density (weight_array);
         print_weight_array(weight_array, "Original density array");
 
+        cerr << "Started to run cycles" << endl;
         int cycles = run_cycle (weight_array);
+        cerr << "Finished to run cycles" << endl;
         print_weight_array(weight_array, "Final density array");
         cout << endl;
         calculate_totReads_density (weight_array, iso_var_map[chrom]);
@@ -373,10 +389,16 @@ int main(int argc, char **argv) {
 
     cout << "mapped_reads_counter: " << bam_general_info.total - bam_general_info.not_aligned <<endl;
     cout << "total_reads_counter: " << bam_general_info.total << endl;
+    cerr << endl;
+    cerr << "Calculate rpkm" << endl;
 
     calculate_rpkm (iso_var_map, bam_general_info.total - bam_general_info.not_aligned);
     print_iso_var_map (iso_var_map);
-    print_iso_var_map_to_file (iso_var_map, "/Users/kot4or/cchmc/geep/testing_data/set_chrm10/output.txt"); // TODO put the path to output file as argument
+
+    if (results_path.length() > 0){
+        cerr << "Exporting results" << endl;
+        print_iso_var_map_to_file (iso_var_map, results_path);
+    }
 
     cout << endl << "RESULTS" << endl;
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
