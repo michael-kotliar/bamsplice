@@ -109,7 +109,10 @@ int main(int argc, char **argv) {
         }
     }
 
+    cerr << "Gathering info about bam file" << endl;
     BamGeneralInfo bam_general_info;
+    // Need to run through the whole bam file, because when we align reads according to exons, we can skip some of its parts
+    get_bam_info (bam_reader, bam_general_info);
 
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it) {
 
@@ -133,6 +136,8 @@ int main(int argc, char **argv) {
         cout << "Current BAM file is indexed" << endl;
         cout << "Trying to set region limited by current chromosome: " << chrom << endl;
 
+
+        // TODO Could couse a problem of mapped reads count, because we skip regions
         if (not bam_reader.SetRegion(ref_id, 0, ref_id, length)){
             cout << "Cannot set region. Exit" << endl;
             cout << bam_reader.GetErrorString(); // added just in case
@@ -199,7 +204,7 @@ int main(int argc, char **argv) {
 
         cerr << "Processing reads" << endl;
         int reads_tem_count = 0;
-        while (get_bam_record(bam_reader, current_bam_record, bam_general_info, freeze)) { // Check if I can get new record from BAM file
+        while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
             reads_tem_count++;
             if (reads_tem_count % 1000 == 0){
                 cerr << "*";

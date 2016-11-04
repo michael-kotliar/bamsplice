@@ -54,14 +54,11 @@ list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignmen
 bool flag_check (const BamAlignment & al, BamGeneralInfo & bam_general_info){
     // TODO add other checks for pair-end reads
     bam_general_info.total++;
-
     if(al.IsMapped()) {
-
         if(al.IsPaired() && (!al.IsProperPair())) {
             bam_general_info.not_aligned++;
             return false;
         }
-
         if(al.IsPaired() && al.IsProperPair() && al.IsMateMapped() ) {
             // Looks like to exclude chimeric reads
             if( ( (al.Position<al.MatePosition) && al.IsReverseStrand() ) || ( (al.MatePosition < al.Position) && al.IsMateReverseStrand() )) {
@@ -69,20 +66,22 @@ bool flag_check (const BamAlignment & al, BamGeneralInfo & bam_general_info){
                 return false;
             }
         }
-
     } else {
         bam_general_info.not_aligned++;
         return false;
     }
-
     return true;
+}
+
+bool flag_check (const BamAlignment & al){
+    BamGeneralInfo bam_general_info;
+    return flag_check (al, bam_general_info);
 }
 
 
 // Gets the new read fro the BAM file through BamReader object
-bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, BamGeneralInfo & bam_general_info, bool freeze){
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze){
     static list <BamRecordPtr> saved_reads; // save all of single reads, which we got from the spliced read
-
     if (freeze and bam_record){
         return true;
     }
@@ -94,7 +93,7 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, BamGener
     }
     BamAlignment current_alignment;
     if (bam_reader.GetNextAlignment(current_alignment)){
-        if (not flag_check (current_alignment, bam_general_info)) {
+        if (not flag_check (current_alignment)) {
             bam_record.reset();
             return false;
         }
@@ -161,4 +160,13 @@ bool make_index (BamReader & bam_reader){
         }
     }
     return true;
+}
+
+void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info){
+    BamAlignment al;
+    while (bam_reader.GetNextAlignment(al)){
+        flag_check (al, bam_general_info);
+    }
+    // return read pointer to the beginnig of the file
+    bam_reader.Rewind();
 }
