@@ -15,10 +15,12 @@
 #ifndef TEST_1_BAM_READER_H
 #define TEST_1_BAM_READER_H
 #endif //TEST_1_BAM_READER_H
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 
 using namespace std;
 using namespace BamTools;
+using namespace boost::posix_time;
 
 class BamRecord;
 typedef boost::shared_ptr<BamRecord> BamRecordPtr;

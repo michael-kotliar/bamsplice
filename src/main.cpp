@@ -152,7 +152,8 @@ int main(int argc, char **argv) {
             assert (it->second.use_count() > 0);
             MapElement current_map_element;
             current_map_element.gtf_records.push_front(it->second);
-            gtf_records_splitted.add( make_pair(interval<long>::closed(it->second->start_pose, it->second->end_pose), current_map_element) );
+            assert (it->second->start_pose < it->second->end_pose);
+            gtf_records_splitted.add( make_pair(interval<long>::open(it->second->start_pose, it->second->end_pose), current_map_element) );
         }
 
         // create an empty matrix: column - one interval from interval map, row - isoforms, initialize it with -1
@@ -164,7 +165,9 @@ int main(int argc, char **argv) {
 
         int temp_n = 0;
         for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
-            weight_array[0][temp_n] = temp_it->first.upper() - temp_it->first.lower();
+            double length = temp_it->first.upper() - temp_it->first.lower();
+            assert (length > 0);
+            weight_array[0][temp_n] = length;
             for (auto  gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it){
                 GffRecordPtr temp_gtf_ptr (*gtf_it);
                 weight_array [ iso_var_map[chrom][temp_gtf_ptr->isoform_id].index ] [temp_n] = min_weight;
@@ -188,6 +191,7 @@ int main(int argc, char **argv) {
             cout << endl;
         }
         cout << endl;
+
 
         // The main iterator to iterate over interval map segment array
         interval_map<long, MapElement>::iterator current_gtf_records_splitted_it = gtf_records_splitted.begin();
@@ -381,6 +385,7 @@ int main(int argc, char **argv) {
 
         cerr << "Started to run cycles" << endl;
         int cycles = run_cycle (weight_array);
+        cerr << "Cycles count: " << cycles << endl;
         cerr << "Finished to run cycles" << endl;
         print_weight_array(weight_array, "Final density array");
         cout << endl;

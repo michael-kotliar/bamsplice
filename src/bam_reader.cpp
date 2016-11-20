@@ -23,19 +23,21 @@ list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignmen
     string read_id = current_alignment.Name;
     int slices = 1;
     for (int i = 0; i < cigar_data.size(); i++){
-        if (cigar_data[i].Type == 'N'){
+        if (cigar_data[i].Type == 'N' || cigar_data[i].Type == 'D'){
             slices++;
         }
     }
     int shift = 0;
     for (int i = 0; i < cigar_data.size(); i++){
-        if (cigar_data[i].Type == 'M' or
-            cigar_data[i].Type == 'I' or
-            cigar_data[i].Type == 'S' or
-            cigar_data[i].Type == '=' or
-            cigar_data[i].Type == 'X'){
+        if (cigar_data[i].Type == 'M'
+//            or
+//            cigar_data[i].Type == 'I' or
+//            cigar_data[i].Type == 'S' or
+//            cigar_data[i].Type == '=' or
+//            cigar_data[i].Type == 'X'
+             ){
             shift += cigar_data[i].Length;
-        } else {
+        } else if (cigar_data[i].Type == 'N' || cigar_data[i].Type == 'D') {
             BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices));
             single_read_array.push_back(single_read);
             start_pose += shift;
@@ -93,6 +95,7 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool fre
     }
     BamAlignment current_alignment;
     if (bam_reader.GetNextAlignment(current_alignment)){
+        cout << "DEBUG: " << current_alignment.Position << " " << current_alignment.Length << endl;
         if (not flag_check (current_alignment)) {
             bam_record.reset();
             return false;
@@ -163,10 +166,13 @@ bool make_index (BamReader & bam_reader){
 }
 
 void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info){
+//    ptime start_time (microsec_clock::local_time());
     BamAlignment al;
     while (bam_reader.GetNextAlignment(al)){
         flag_check (al, bam_general_info);
     }
     // return read pointer to the beginnig of the file
+//    ptime end_time (microsec_clock::local_time());
+//    cout << "get_bam_info diration: " << end_time - start_time << endl;
     bam_reader.Rewind();
 }

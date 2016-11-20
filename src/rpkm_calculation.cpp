@@ -78,7 +78,7 @@ vector <double> get_average_density_by_all_isoforms (const vector <vector <doubl
     cout << std::setprecision(9);
     for (int i = 1; i < weight_array.size(); i++) {
         double average_by_row = get_average_by_row(weight_array, i);
-        cout << "Average by row " << i <<" : " << average_by_row << endl;
+//        cout << "Average by row " << i <<" : " << average_by_row << endl;
         average_density.push_back( average_by_row );
     }
     return average_density;
@@ -153,33 +153,35 @@ int run_cycle (vector <vector <double> > & weight_array){
     // Get array of original densities sum
     vector <double> original_sum_dens =  get_sum_density_by_all_intervals (weight_array);
 
-                    print_array (original_sum_dens, "Original density sums");
+//    print_array (original_sum_dens, "Original density sums");
 
     for (int i = 0; i < 2000; i++){
         // Update original density array with average values for isoforms
-        cout << endl << "Set average by row" << endl;
+//        cout << endl << "Set average by row" << endl;
         update_isoforms_density_to_average_for_isoform (weight_array);
 //        print_weight_array(weight_array, "Average density array");
 
-        cout << endl;
+//        cout << endl;
 
         // Get array of temporary densities sum
         vector <double> new_sum_dens =  get_sum_density_by_all_intervals (weight_array);
-        print_array (original_sum_dens, "Original density sums");
+//        print_array (original_sum_dens, "Original density sums");
 //        print_array (new_sum_dens, "New density sums");
 
-        cout << endl << "Update according to the differenceds in original and new density sums" << endl;
+//        cout << endl << "Update according to the differenceds in original and new density sums" << endl;
 
         // Update density array according to the coef calculated by new density sums
         adjust_isoforms_density_by_coef (weight_array, original_sum_dens, new_sum_dens);
 //        print_weight_array(weight_array, "Updated density array");
-        cout << endl;
+//        cout << endl;
 
         cycles++;
         cerr << "Cycle: " << cycles << "\r";
         subtract_matrix(tmp_matrix, weight_array);
-
-        if( sum_all (tmp_matrix) < cutoff ){
+//        print_weight_array(tmp_matrix, "Substracted matrix");
+        double sum = sum_all (tmp_matrix);
+//        cout << "sum: " << sum << endl;
+        if( sum < cutoff ){
             break;
         }
 
@@ -213,7 +215,7 @@ void calculate_totReads_density (const vector<vector<double> > & weight_array, s
         }
         iso_it->second.total_reads = (int)iso_it->second.density;
 
-        iso_it->second.density = 1000 * iso_it->second.density / (double)iso_it->second.length;
+        iso_it->second.density = 1000 * iso_it->second.total_reads / (double)iso_it->second.length;
     }
 }
 
