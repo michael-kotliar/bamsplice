@@ -266,7 +266,7 @@ bool load_annotation (const string & full_path_name,
             ss << i+1;
             string exon_id = ss.str();
 
-            GffRecordPtr current_gff (new GffRecord (current_isoform.exon_starts[i], current_isoform.exon_ends[i], exon_id, current_isoform.name, previous_annotation) );
+            GffRecordPtr current_gff (new GffRecord (current_isoform.exon_starts[i], current_isoform.exon_ends[i], exon_id, current_isoform.name, previous_annotation, current_isoform.strand) );
             previous_annotation = current_gff;
             pair <long, GffRecordPtr> internal_pair (current_isoform.exon_starts[i], current_gff);
             multimap <long, GffRecordPtr> internal_multimap;

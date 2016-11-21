@@ -214,6 +214,7 @@ int main(int argc, char **argv) {
         cerr << "Processing reads" << endl;
         int reads_tem_count = 0;
         while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
+
             reads_tem_count++;
             if (reads_tem_count % 1000 == 0){
                 cerr << "*";
@@ -281,6 +282,15 @@ int main(int argc, char **argv) {
             // in other words we receive pointers to the annotations which includes current bam read
             set<GffRecordPtr> gff_intersection = get_intersection(current_gtf_records_splitted_it, temp_gtf_records_splitted_it);
 
+            // Filter gff_intersection for only those GffRecordPtr, who has the same strand as current_bam_record
+//            for (auto intersect_iter = gff_intersection.begin(); intersect_iter != gff_intersection.end(); ) {
+//                if (intersect_iter->get()->strand != current_bam_record->strand){
+//                    intersect_iter = gff_intersection.erase (intersect_iter);
+//                    cerr << "erased GffRecord because of the strand" << endl;
+//                } else {
+//                    ++intersect_iter;
+//                }
+//            }
 
             // iterate over the intersection set
             for (auto gff_it = gff_intersection.begin(); gff_it != gff_intersection.end(); ++gff_it) {

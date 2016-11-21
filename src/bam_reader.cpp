@@ -18,6 +18,7 @@ list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignmen
     // If splice read - add all of them into array
     // NOTE we need to put it in that list in a right order. use push_back
     list <BamRecordPtr> single_read_array;
+    bool strand = ! current_alignment.IsReverseStrand();
     vector<CigarOp> cigar_data = current_alignment.CigarData;
     long start_pose = current_alignment.Position;
     string read_id = current_alignment.Name;
@@ -38,7 +39,7 @@ list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignmen
              ){
             shift += cigar_data[i].Length;
         } else if (cigar_data[i].Type == 'N' || cigar_data[i].Type == 'D') {
-            BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices));
+            BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices, strand));
             single_read_array.push_back(single_read);
             start_pose += shift;
             if (cigar_data[i].Type == 'N'){
@@ -47,7 +48,7 @@ list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignmen
             shift = 0;
         }
     }
-    BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices));
+    BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices, strand));
     single_read_array.push_back(single_read);
     return single_read_array;
 }

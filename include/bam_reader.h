@@ -45,14 +45,16 @@ public:
     long end_pose; // stop position of the read
     string read_id; // text identificator of the read
     short slices; // if the read is spliced - set here total amount of parts, that form this read, default = 1
+    bool strand; // true for +
     // ADD HERE OTHER INMPORTANT FIELDS
 
     // Constructor with parameters
-    BamRecord (long start, long end, string read, short parts_number)
+    BamRecord (long start, long end, string read, short parts_number, bool strnd)
             : start_pose (start)
             , end_pose (end)
             , read_id (read)
             , slices (parts_number)
+            , strand (strnd)
     {}
 
     // Empty constructor
@@ -61,6 +63,7 @@ public:
             , end_pose (0)
             , read_id (" ")
             , slices (1)
+            , strand (false)
     {}
 
     void print ();

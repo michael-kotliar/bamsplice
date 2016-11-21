@@ -37,16 +37,18 @@ public:
     string isoform_id; // set the name of the isofom=rm to which current annotation belongs
     vector < BamRecordPtr > bam_records; // array of pointers to all of the reads, which belongs to this exon. Need this for debug, than we can delete this field
     long reads_count; // total number of reads, which belongs to this exon
+    bool strand; // true for +
     GffRecordPtr previous_gff; // ptr to the previous annotation in the same isoform. In NULL - first annotation in current isoform
 
     // CONSTRUCTOR WITH PARAMETERS
-    GffRecord (long start, long end, string exon, string isoform, GffRecordPtr pre_gff)
+    GffRecord (long start, long end, string exon, string isoform, GffRecordPtr pre_gff, bool strnd)
             : start_pose (start)
             , end_pose (end)
             , exon_id (exon)
             , isoform_id (isoform)
             , previous_gff (pre_gff)
             , reads_count (0)
+            , strand (strnd)
     {}
 
     // EMPTY CONSTRUCTOR
@@ -57,6 +59,7 @@ public:
             , isoform_id ("")
             , previous_gff (NULL)
             , reads_count (0)
+            , strand (false)
     {}
 
 };
