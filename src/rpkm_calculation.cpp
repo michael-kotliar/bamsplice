@@ -180,7 +180,7 @@ int run_cycle (vector <vector <double> > & weight_array){
         subtract_matrix(tmp_matrix, weight_array);
 //        print_weight_array(tmp_matrix, "Substracted matrix");
         double sum = sum_all (tmp_matrix);
-//        cout << "sum: " << sum << endl;
+        cerr << "sum: " << sum << endl;
         if( sum < cutoff ){
             break;
         }

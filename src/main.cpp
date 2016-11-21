@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
             MapElement current_map_element;
             current_map_element.gtf_records.push_front(it->second);
             assert (it->second->start_pose < it->second->end_pose);
-            gtf_records_splitted.add( make_pair(interval<long>::open(it->second->start_pose, it->second->end_pose), current_map_element) );
+            gtf_records_splitted.add( make_pair(interval<long>::right_open(it->second->start_pose, it->second->end_pose), current_map_element) );
         }
 
         // create an empty matrix: column - one interval from interval map, row - isoforms, initialize it with -1
@@ -166,6 +166,11 @@ int main(int argc, char **argv) {
         int temp_n = 0;
         for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
             double length = temp_it->first.upper() - temp_it->first.lower();
+//            if (length == 0){
+//                cout << "temp_it->first.upper() = " << temp_it->first.upper() << endl;
+//                cout << "temp_it->first.lower() = " << temp_it->first.lower() << endl;
+//                return 0;
+//            }
             assert (length > 0);
             weight_array[0][temp_n] = length;
             for (auto  gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it){
