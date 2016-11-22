@@ -4,6 +4,24 @@
 
 #include "rpkm_calculation.h"
 
+// map to save <chromosome name, <isoform name, correspondent Isoform object> >
+void print_isoform_by_name (const vector<vector<double> > & data_array,
+                            std::map <string, std::map <string, Isoform> > iso_var_map,
+                            string chr,
+                            string isoform_name,
+                            std::ostream & out){
+    int index = iso_var_map[chr][isoform_name].index;
+    out << "[" << chr << "] - [" << isoform_name << "]" << endl;
+    for (int j = 0; j < data_array[index].size(); j++) {
+        if (data_array[index][j] == 0){
+//            out << setw(16) << "-----";
+        } else {
+            out << std::left << setw(16) << data_array[index][j] << "   [" << data_array[0][j] << "]   ";
+        }
+    }
+    out << endl;
+}
+
 
 
 void print_weight_array(const vector<vector<double> > & weight_array, const string & title){

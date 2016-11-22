@@ -186,16 +186,24 @@ int main(int argc, char **argv) {
 
 
         // FOR DEBUG USE ONLY
-        cout << "GENERATE INTERVAL MAP" << endl;
+        cerr << "GENERATE INTERVAL MAP ONLY FOR NM_001198798" << endl;
         for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
-            cout << "[" << temp_it->first.lower() << "," << temp_it->first.upper() << "]" << " : ";
+            bool print_it = false;
+            std::stringstream list_of_exons;
             for (auto it = temp_it->second.gtf_records.begin(); it != temp_it->second.gtf_records.end(); ++it) {
                 assert (it->use_count() > 0);
-                cout << it->get()->exon_id << " (" << it->get()->isoform_id << "), ";
+                list_of_exons << "      ex:" << it->get()->exon_id << " (" << it->get()->isoform_id << ")";
+                if (it->get()->isoform_id  == "NM_001198798"){
+                    print_it = true;
+                }
             }
-            cout << endl;
+            if (print_it){
+                cerr << "[" << temp_it->first.lower() << "," << temp_it->first.upper() << "]   ";
+                cerr << list_of_exons.str();
+                cerr << endl;
+            }
         }
-        cout << endl;
+        cerr << endl;
 
 
         // The main iterator to iterate over interval map segment array
@@ -348,11 +356,15 @@ int main(int argc, char **argv) {
                         // iterating iver annotation of one specific isoform from iso_map and add to each of them
                         // pointer to a current bam record
                         for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it) {
-                            gff_it->annotation->bam_records.push_back(current_bam_record);
+                            BamRecordPtr bam_record_to_put_in_array = current_bam_record; // put it just in case. should be the same as just push original pointer to array, 'cos push copies
+                            gff_it->annotation->bam_records.push_back(bam_record_to_put_in_array);
                             gff_it->annotation->reads_count++;
+                            if (gff_it->annotation->isoform_id == "NM_001198798"){
+                                cout << "to NM_001198798 added: " << bam_record_to_put_in_array->read_id << endl;
+                            }
                             assert (gff_it->annotation.use_count() > 0);
-                            assert (current_bam_record.use_count() > 0);
-                            cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << current_bam_record->read_id << endl;
+                            assert (bam_record_to_put_in_array.use_count() > 0);
+                            cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << bam_record_to_put_in_array->read_id << endl;
                             // updated weight array
                             string isoform = gff_it->annotation->isoform_id;
                             int j = iso_var_map[chrom][isoform].index;
@@ -394,9 +406,15 @@ int main(int argc, char **argv) {
         // Original weight array
         print_weight_array(weight_array, "Original weight array");
 
+        cerr << "Original weight array" << endl;
+        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cerr);
+
         // Transormed to density
         transform_to_density (weight_array);
         print_weight_array(weight_array, "Original density array");
+
+        cerr << "Original density array" << endl;
+        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cerr);
 
         cerr << "Started to run cycles" << endl;
         int cycles = run_cycle (weight_array);

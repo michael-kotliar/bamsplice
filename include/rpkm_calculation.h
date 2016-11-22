@@ -15,7 +15,11 @@
 #endif //TEST_1_RPKM_CALCULATION_H
 
 using namespace std;
-
+void print_isoform_by_name (const vector<vector<double> > & data_array,
+                            std::map <string, std::map <string, Isoform> > iso_var_map,
+                            string chr,
+                            string isoform_name,
+                            std::ostream & out = cout);
 void print_weight_array(const vector<vector<double> > & weight_array, const string & title = "");
 void transform_to_density ( vector <vector <double> > & weight_array);
 double get_sum_by_row (const vector <vector <double> > & weight_array, const int & row, int & count);
