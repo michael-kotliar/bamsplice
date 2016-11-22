@@ -35,8 +35,7 @@ void transform_to_density (vector <vector <double> > & weight_array){
 double get_sum_by_row (const vector <vector <double> > & weight_array, const int & row, int & count){
     assert ( (row >= 0 ) and (row < weight_array.size()) );
     count = 0;
-    double sum;
-    count = 0;
+    double sum = 0;
     for (int j = 0; j < weight_array[row].size(); j++) {
         if (weight_array[row][j] != 0 ) {
             sum += weight_array[row][j];
@@ -49,6 +48,7 @@ double get_sum_by_row (const vector <vector <double> > & weight_array, const int
 double get_average_by_row (const vector <vector <double> > & weight_array, const int & row){
     int count = 0;
     double sum = get_sum_by_row(weight_array, row, count);
+    if (count == 0) return 0;
     return sum / count;
 }
 
@@ -70,6 +70,7 @@ double get_sum_by_column (const vector <vector <double> > & weight_array, const 
 double get_average_by_column (const vector <vector <double> > & weight_array, const int & column){
     int count = 0;
     double sum = get_sum_by_column(weight_array, column, count);
+    if (count == 0) return 0;
     return sum / count;
 }
 
@@ -147,7 +148,7 @@ void subtract_matrix (vector <vector <double> > & first, const vector <vector <d
 
 
 int run_cycle (vector <vector <double> > & weight_array){
-    double cutoff = 10e-5; // TODO put it in separate configuration file
+    double cutoff = 10e-9; // TODO put it in separate configuration file
     int cycles = 0;
     vector <vector <double> > tmp_matrix (weight_array);
     // Get array of original densities sum
