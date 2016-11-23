@@ -203,8 +203,11 @@ void print_iso_var_map_to_file (const std::map <string, std::map <string, Isofor
         for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
             output_stream << "Chromosome: " << ext_it->first << endl;
             for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
-                output_stream << setw(10) << "  isoform: "
+                output_stream
+                     << setw(10) << "  isoform: "
                      << setw(15) << int_it->first
+                     << setw(10) << "gene: "
+                     << setw(15) << int_it->second.name2
                      << setw(10) << " index: "
                      << setw(3) << int_it->second.index
                      << setw(10) << " length: "

@@ -76,10 +76,10 @@ public:
     long cds_end; // 7
     long exon_count; // 8
     long length; // length of isofom = sum of all exons' lengths
-    int total_reads; // total number of reads in isoform
+    long total_reads; // total number of reads in isoform
     double density; // total_reads/length
     double rpkm; // rpkm
-    long index; // index that will be used in weigth array to save reads there
+    int index; // index that will be used in weigth array to save reads there
     vector <long> exon_starts; // not necessary to be sorted // 9
     vector <long> exon_ends; // saves pointers to ends of the exons. not necessary to be sorted // 10
     vector <long> exon_frames; // pointers to exon frames, not necessary to be sorted // 15

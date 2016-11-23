@@ -168,13 +168,14 @@ void subtract_matrix (vector <vector <double> > & first, const vector <vector <d
 int run_cycle (vector <vector <double> > & weight_array){
     double cutoff = 10e-9; // TODO put it in separate configuration file
     int cycles = 0;
-    vector <vector <double> > tmp_matrix (weight_array);
+    vector <vector <double> > tmp_matrix;
+    tmp_matrix = weight_array;
     // Get array of original densities sum
     vector <double> original_sum_dens =  get_sum_density_by_all_intervals (weight_array);
 
 //    print_array (original_sum_dens, "Original density sums");
 
-    for (int i = 0; i < 2000; i++){
+    for (int i = 0; i < 5000; i++){
         // Update original density array with average values for isoforms
 //        cout << endl << "Set average by row" << endl;
         update_isoforms_density_to_average_for_isoform (weight_array);
@@ -232,13 +233,12 @@ void calculate_totReads_density (const vector<vector<double> > & weight_array, s
                 iso_it->second.density += weight_array[index][j] * weight_array[0][j];
             }
         }
-        iso_it->second.total_reads = (int)iso_it->second.density;
-
+        iso_it->second.total_reads = (long)iso_it->second.density;
         iso_it->second.density = 1000 * iso_it->second.total_reads / (double)iso_it->second.length;
     }
 }
 
-void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map, const int & aligned) {
+void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map, const long & aligned) {
     for (auto chrom_it = iso_var_map.begin(); chrom_it != iso_var_map.end(); ++chrom_it) {
         for (auto iso_it = chrom_it->second.begin(); iso_it !=  chrom_it->second.end(); ++iso_it) {
             iso_it->second.rpkm = iso_it->second.density / ( (double)aligned / (double)1000000 );

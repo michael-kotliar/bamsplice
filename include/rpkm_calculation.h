@@ -35,4 +35,4 @@ int run_cycle (vector <vector <double> > & weight_array);
 double sum_all (const vector <vector <double> > dens_matrix);
 void subtract_matrix (vector <vector <double> > & first, const vector <vector <double> > & second);
 void calculate_totReads_density (const vector<vector<double> > & weight_array, std::map <string, Isoform> & iso_map);
-void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map, const int & aligned);
+void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map, const long & aligned);

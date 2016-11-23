@@ -6,12 +6,19 @@
 
 
 bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord previous_bam_record, interval_map<long, MapElement>::iterator & current_gtf_records_splitted_it, bool & freeze){
+    if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
+        cerr << "inside find_start_segment_annotation function" << endl;
+    }
     static bool allow_skip_rest;
     assert (current_bam_record.use_count() > 0);
     if (current_bam_record->read_id == previous_bam_record.read_id and allow_skip_rest){
         freeze = false;
+        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
+            cerr << "current_bam_record->read_id == previous_bam_record.read_id and allow_skip_rest" << endl;
+        }
         return false;
     }
+
     if (current_bam_record->start_pose < current_gtf_records_splitted_it->first.lower()) {
         cout << "   Skip read " << current_bam_record->read_id << " [" <<
              current_bam_record->start_pose << "," <<
@@ -19,6 +26,12 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
         cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
         freeze = false; // Set freeze to false to change current_bam_record
         allow_skip_rest = true;
+        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
+            cerr << "   Skip read " << current_bam_record->read_id << " [" <<
+                 current_bam_record->start_pose << "," <<
+                 current_bam_record->end_pose << "]" << endl;
+            cerr << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
+        }
         return false;
     }
     allow_skip_rest = false;
@@ -26,11 +39,53 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
 //        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
         cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
              << current_gtf_records_splitted_it->first.upper() << "]" << endl;
+        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
+            cerr << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
+                 << current_gtf_records_splitted_it->first.upper() << "]" << endl;
+        }
         current_gtf_records_splitted_it++;
         freeze = true; // Set freeze to true to prevent changing current_bam_record
         return false;
     }
+    if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
+        cerr << "exit form find_start_segment_annotation function with true" << endl;
+    }
     return true;
+
+
+
+//    if ( current_bam_record->start_pose >= current_gtf_records_splitted_it->first.lower() &&
+//         current_bam_record->start_pose <= current_gtf_records_splitted_it->first.upper() ){
+//        allow_skip_rest = false;
+//        return true;
+//    } else if ( current_bam_record->start_pose < current_gtf_records_splitted_it->first.lower() ){
+//        cout << "   Skip read " << current_bam_record->read_id << " [" <<
+//             current_bam_record->start_pose << "," <<
+//             current_bam_record->end_pose << "]" << endl;
+//        cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
+//        freeze = false; // Set freeze to false to change current_bam_record
+//        allow_skip_rest = true;
+//        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
+//            cerr << "   Skip read " << current_bam_record->read_id << " [" <<
+//                 current_bam_record->start_pose << "," <<
+//                 current_bam_record->end_pose << "]" << endl;
+//            cerr << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
+//        }
+//        return false;
+//    } else if ( current_bam_record->start_pose > current_gtf_records_splitted_it->first.upper() ){
+//        //        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
+//        cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
+//             << current_gtf_records_splitted_it->first.upper() << "]" << endl;
+//        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
+//            cerr << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
+//                 << current_gtf_records_splitted_it->first.upper() << "]" << endl;
+//        }
+//        current_gtf_records_splitted_it++;
+//        freeze = true; // Set freeze to true to prevent changing current_bam_record
+//        allow_skip_rest = false;
+//        return false;
+//    }
+
 }
 
 bool find_stop_segment_annotation (BamRecordPtr current_bam_record,
@@ -38,16 +93,31 @@ bool find_stop_segment_annotation (BamRecordPtr current_bam_record,
                                    interval_map<long,MapElement>::iterator max_segment_annotation,
                                    bool & freeze){
     assert (current_bam_record.use_count() > 0);
-    while (current_bam_record->end_pose < temp_gtf_records_splitted_it->first.lower() or
-           current_bam_record->end_pose > temp_gtf_records_splitted_it->first.upper()){
-        // check if we reached the end of the gtf_records array. If true, change go to the next bam_record
-        if (temp_gtf_records_splitted_it == max_segment_annotation){
+    while (true){
+        if ( current_bam_record->end_pose >= temp_gtf_records_splitted_it->first.lower() &&
+             current_bam_record->end_pose <= temp_gtf_records_splitted_it->first.upper() ){
+            return true;
+        } else if (temp_gtf_records_splitted_it == max_segment_annotation){
+            freeze = false;
+            return false;
+        } else {
+            temp_gtf_records_splitted_it++;
+        }
+        if (current_bam_record->end_pose < temp_gtf_records_splitted_it->first.lower()){
             freeze = false;
             return false;
         }
-        temp_gtf_records_splitted_it++;
     }
-    return true;
+//    while (current_bam_record->end_pose < temp_gtf_records_splitted_it->first.lower() or
+//           current_bam_record->end_pose > temp_gtf_records_splitted_it->first.upper()){
+//        // check if we reached the end of the gtf_records array. If true, change go to the next bam_record
+//        if (temp_gtf_records_splitted_it == max_segment_annotation){
+//            freeze = false;
+//            return false;
+//        }
+//        temp_gtf_records_splitted_it++;
+//    }
+//    return true;
 }
 
 void print_segment_annotation (const string & title, interval_map<long, MapElement>::iterator current_gtf_records_splitted_it){
