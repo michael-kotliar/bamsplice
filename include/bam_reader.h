@@ -8,9 +8,13 @@
 #include <forward_list>
 #include <boost/icl/interval_map.hpp>
 #include <list>
+#include "string_tools.h"
 
 #include "api/BamReader.h"
 #include "api/BamMultiReader.h"
+
+
+
 
 #ifndef TEST_1_BAM_READER_H
 #define TEST_1_BAM_READER_H
@@ -28,10 +32,17 @@ typedef boost::shared_ptr<BamRecord> BamRecordPtr;
 struct BamGeneralInfo {
     long total;
     long not_aligned;
+    long aligned;
     BamGeneralInfo ():
             total (0),
-            not_aligned (0)
+            not_aligned (0),
+            aligned (0)
     {
+    }
+    void operator = (const BamGeneralInfo &other ) {
+        total = other.total;
+        not_aligned = other.not_aligned;
+        aligned = other.aligned;
     }
 };
 

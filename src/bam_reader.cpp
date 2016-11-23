@@ -6,6 +6,9 @@
 
 // CLASS BamRecord
 
+using namespace string_tools;
+
+
 void BamRecord::print (){
     cout << "Read_id: " << read_id << endl;
     cout << "[start, end]: [" << start_pose << ", " << end_pose << "]" << endl;
@@ -166,14 +169,57 @@ bool make_index (BamReader & bam_reader){
     return true;
 }
 
-void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info){
-//    ptime start_time (microsec_clock::local_time());
-    BamAlignment al;
-    while (bam_reader.GetNextAlignment(al)){
-        flag_check (al, bam_general_info);
+
+
+
+bool load_from_file (const string & full_filename, BamGeneralInfo & bam_general_info){
+    BamGeneralInfo new_info;
+    ifstream input_stream (full_filename);
+    if (!input_stream) {
+        cerr << "Cannot open file " << full_filename << endl;
+        return false;
     }
-    // return read pointer to the beginnig of the file
-//    ptime end_time (microsec_clock::local_time());
-//    cout << "get_bam_info diration: " << end_time - start_time << endl;
-    bam_reader.Rewind();
+    string line;
+    while (getline(input_stream, line)) {
+        if (include_key(line, "Number of input reads")){
+            if (not str_to_long(new_info.total, split_line(line)[1]) ){
+                return false;
+            }
+        }
+        if (include_key(line, "Uniquely mapped reads number")){
+            if (not str_to_long(new_info.aligned, split_line(line)[1]) ){
+                return false;
+            }
+        }
+    }
+    if (new_info.total == 0 || new_info.aligned == 0){
+        return false;
+    }
+    new_info.not_aligned = new_info.total - new_info.aligned;
+    bam_general_info = new_info;
+    return true;
+}
+
+
+void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info){
+    // check if we can get it from the STAR output Log.final.out in the same folder.
+    // If not - iterate over the file
+    string log_filename_sufix = "Log.final.out";   // TODO put it as parameter
+    string bam_filename (bam_reader.GetFilename(), bam_reader.GetFilename().find_last_of('/')+1);
+    string bam_wo_ext (bam_filename, 0, bam_filename.find_last_of('.')+1);
+    string path (bam_reader.GetFilename(), 0,  bam_reader.GetFilename().find_last_of('/')+1);
+    string full_log_filename = path + bam_wo_ext + log_filename_sufix;
+    if (not load_from_file (full_log_filename, bam_general_info)){
+        cerr << "Couldn't find any file with mapping statistics. Calculating ..." << endl;
+        BamAlignment al;
+        while (bam_reader.GetNextAlignment(al)){
+            flag_check (al, bam_general_info);
+        }
+        bam_general_info.aligned = bam_general_info.total - bam_general_info.not_aligned;
+        bam_reader.Rewind();
+    }
+    cerr << "BAM alignment statistics:" << endl;
+    cerr << "   Total: " << bam_general_info.total << endl;
+    cerr << "   Aligned: " << bam_general_info.aligned << endl;
+    cerr << "   Not aligned: " << bam_general_info.not_aligned << endl;
 }

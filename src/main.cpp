@@ -465,12 +465,12 @@ int main(int argc, char **argv) {
 
     }
 
-    cout << "mapped_reads_counter: " << bam_general_info.total - bam_general_info.not_aligned <<endl;
+    cout << "mapped_reads_counter: " << bam_general_info.aligned <<endl;
     cout << "total_reads_counter: " << bam_general_info.total << endl;
     cerr << endl;
     cerr << "Calculate rpkm" << endl;
 
-    calculate_rpkm (iso_var_map, bam_general_info.total - bam_general_info.not_aligned);
+    calculate_rpkm (iso_var_map, bam_general_info.aligned);
     print_iso_var_map (iso_var_map);
 
     if (results_path.length() > 0){

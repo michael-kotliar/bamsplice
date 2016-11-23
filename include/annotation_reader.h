@@ -3,7 +3,6 @@
 //
 
 #include "bam_reader.h"
-#include "string_tools.h"
 #include <iomanip>
 #include <iostream>
 #include <fstream>
