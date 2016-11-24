@@ -185,29 +185,6 @@ int main(int argc, char **argv) {
         // FOR DEBUG ONLY
 //        print_weight_array (weight_array);
 
-
-
-        // FOR DEBUG USE ONLY
-        //        cerr << "GENERATE INTERVAL MAP ONLY FOR NM_001198798" << endl;
-        //        for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
-        //            bool print_it = false;
-        //            std::stringstream list_of_exons;
-        //            for (auto it = temp_it->second.gtf_records.begin(); it != temp_it->second.gtf_records.end(); ++it) {
-        //                assert (it->use_count() > 0);
-        //                list_of_exons << "      ex:" << it->get()->exon_id << " (" << it->get()->isoform_id << ")";
-        //                if (it->get()->isoform_id  == "NM_001198798"){
-        //                    print_it = true;
-        //                }
-        //            }
-        //            if (print_it){
-        //                cerr << "[" << temp_it->first.lower() << "," << temp_it->first.upper() << "]   ";
-        //                cerr << list_of_exons.str();
-        //                cerr << endl;
-        //            }
-        //        }
-        //        cerr << endl;
-
-
         // The main iterator to iterate over interval map segment array
         interval_map<long, MapElement>::iterator current_gtf_records_splitted_it = gtf_records_splitted.begin();
         // Additinal iterator to backup current_gtf_records_splitted_it iterator when we are processing spliced read]
@@ -225,13 +202,6 @@ int main(int argc, char **argv) {
         int reads_tem_count = 0;
         static int lower_index = 0;
         while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
-            //            cerr << "*" << endl;
-            //            if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-            //                cerr << "Get read A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549" << endl;
-            //                cerr << " [" << current_bam_record->start_pose << "," <<
-            //                                current_bam_record->end_pose << "] - " <<
-            //                                current_bam_record->slices << " parts" << endl;
-            //            }
             reads_tem_count++;
             if (reads_tem_count % 1000 == 0){
                 cerr << "*";
@@ -276,19 +246,10 @@ int main(int argc, char **argv) {
                 current_slice++;
             }
 
-//            if (backup_current_gtf_records_splitted_it->first.lower() != lower_index){
-//                cerr << "backup_current_gtf_records_splitted_it = " << backup_current_gtf_records_splitted_it->first.lower() << endl;
-//                assert (lower_index <= backup_current_gtf_records_splitted_it->first.lower());
-//                lower_index = backup_current_gtf_records_splitted_it->first.lower();
-//            }
-
             // Find start segment annotation
             // If false call get_bam_record again. freeze is true if we need to skip the read and false if we want to skip annotation
             if (not find_start_segment_annotation(current_bam_record, previous_bam_record, current_gtf_records_splitted_it, freeze)){
                 previous_bam_record = *current_bam_record; // update previous_bam_record with current value
-                //                if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-                //                    cerr << "For read A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549 didn't find any start interval" << endl;
-                //                }
                 if ( current_gtf_records_splitted_it == gtf_records_splitted.end() ) {
                     if (current_bam_record->slices > 1 && current_slice > 1){
                         cerr << "Rewind current_gtf_records_splitted_it" << endl;
@@ -296,7 +257,7 @@ int main(int argc, char **argv) {
                         freeze = false;
                         continue;
                     } else {
-                        cerr << "reached the end of interval map 2" << endl;
+                        cerr << "reached the end of interval map" << endl;
                         break;
                     }
                 }
@@ -312,16 +273,9 @@ int main(int argc, char **argv) {
 
             // Find stop segment annotation
             // If false call get_bam_record with freeze = false ===> skip current bam record and get the next one
-            if (current_gtf_records_splitted_it == gtf_records_splitted.end()){
-                cerr << "reached the end of interval map 3" << endl;
-                break;
-            }
             interval_map<long, MapElement>::iterator temp_gtf_records_splitted_it = current_gtf_records_splitted_it;
 
             if (not find_stop_segment_annotation(current_bam_record, temp_gtf_records_splitted_it, gtf_records_splitted.end(), freeze)){
-                //                if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-                //                    cerr << "For read A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549 didn't find any stop interval" << endl;
-                //                };
                 continue;
             }
 
@@ -334,14 +288,6 @@ int main(int argc, char **argv) {
             // we receive set of annotation which is similar between start and end interval map segments
             // in other words we receive pointers to the annotations which includes current bam read
             set<GffRecordPtr> gff_intersection = get_intersection(current_gtf_records_splitted_it, temp_gtf_records_splitted_it);
-            // FOR DEBUG USE ONLY
-            //            if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-            //                cerr << "Intersection set for A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549" << endl;
-            //                for (auto intersect_iter = gff_intersection.begin(); intersect_iter != gff_intersection.end(); ++intersect_iter){
-            //                    cerr <<  intersect_iter->get()->isoform_id << " - "<< intersect_iter->get()->exon_id << endl;
-            //                }
-            //            };
-
 
             // TODO maybe we'll need it when have to filter by strand
             // Filter gff_intersection for only those GffRecordPtr, who has the same strand as current_bam_record
@@ -410,10 +356,6 @@ int main(int argc, char **argv) {
                             gff_it->annotation->bam_records.push_back(bam_record_to_put_in_array);
                             gff_it->annotation->reads_count++;
                             cout <<"[***]" << endl;
-                            // FOR DEBUG USE ONLY
-                            //                            if (gff_it->annotation->isoform_id == "NM_001198798"){
-                            //                                cerr << "to NM_001198798 added: " << bam_record_to_put_in_array->read_id << endl;
-                            //                            }
                             assert (gff_it->annotation.use_count() > 0);
                             assert (bam_record_to_put_in_array.use_count() > 0);
 //                            cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << bam_record_to_put_in_array->read_id << endl;
@@ -455,22 +397,21 @@ int main(int argc, char **argv) {
 
 
         // Original weight array
-        //        print_weight_array(weight_array, "Original weight array");
+        print_weight_array(weight_array, "Original weight array");
 
-//        cerr << "Original weight array" << endl;
-        //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
+//        cout << "DEBUG NM_001198798" << endl;
+//        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
 
         // Transormed to density
         transform_to_density (weight_array);
-//        print_weight_array(weight_array, "Original density array");
+        print_weight_array(weight_array, "Original density array");
 
-//        cerr << "Original density array" << endl;
-//        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
+        //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
 
         cerr << "Started to run cycles" << endl;
         int cycles = run_cycle (weight_array);
         cerr << "Finished to run cycles : " << cycles << endl;
-//        print_weight_array(weight_array, "Final density array");
+        print_weight_array(weight_array, "Final density array");
         cout << endl;
         calculate_totReads_density (weight_array, iso_var_map[chrom]);
         cout << endl << endl;

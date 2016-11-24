@@ -13,9 +13,6 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
     assert (current_bam_record.use_count() > 0);
     if (current_bam_record->read_id == previous_bam_record.read_id and allow_skip_rest){
         freeze = false;
-        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-            cerr << "current_bam_record->read_id == previous_bam_record.read_id and allow_skip_rest" << endl;
-        }
         return false;
     }
 
@@ -26,12 +23,6 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
         cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
         freeze = false; // Set freeze to false to change current_bam_record
         allow_skip_rest = true;
-        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-            cerr << "   Skip read " << current_bam_record->read_id << " [" <<
-                 current_bam_record->start_pose << "," <<
-                 current_bam_record->end_pose << "]" << endl;
-            cerr << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
-        }
         return false;
     }
     allow_skip_rest = false;
@@ -39,16 +30,9 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
 //        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
         cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
              << current_gtf_records_splitted_it->first.upper() << "]" << endl;
-        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-            cerr << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
-                 << current_gtf_records_splitted_it->first.upper() << "]" << endl;
-        }
         current_gtf_records_splitted_it++;
         freeze = true; // Set freeze to true to prevent changing current_bam_record
         return false;
-    }
-    if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-        cerr << "exit form find_start_segment_annotation function with true" << endl;
     }
     return true;
 

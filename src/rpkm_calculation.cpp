@@ -175,7 +175,7 @@ int run_cycle (vector <vector <double> > & weight_array){
 
 //    print_array (original_sum_dens, "Original density sums");
 
-    for (int i = 0; i < 5000; i++){
+    for (int i = 0; i < 2000; i++){
         // Update original density array with average values for isoforms
 //        cout << endl << "Set average by row" << endl;
         update_isoforms_density_to_average_for_isoform (weight_array);
