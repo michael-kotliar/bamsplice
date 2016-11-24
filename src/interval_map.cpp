@@ -6,9 +6,6 @@
 
 
 bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord previous_bam_record, interval_map<long, MapElement>::iterator & current_gtf_records_splitted_it, bool & freeze){
-    if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-        cerr << "inside find_start_segment_annotation function" << endl;
-    }
     static bool allow_skip_rest;
     assert (current_bam_record.use_count() > 0);
     if (current_bam_record->read_id == previous_bam_record.read_id and allow_skip_rest){
