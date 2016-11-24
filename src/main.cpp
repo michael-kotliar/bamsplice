@@ -38,6 +38,12 @@ int main(int argc, char **argv) {
         test_mode = true;
     }
 
+    string test_results_path = "";
+    if (argc > 4 && test_mode ){
+        test_results_path = string (argv[4]);
+    }
+
+
     if (argc > 3 && (!test_mode) ){
         string log_filename = string(argv[3]);
         cerr << "Log file " << log_filename << endl;
@@ -438,7 +444,7 @@ int main(int argc, char **argv) {
             freeze = false;
         }
 
-        if ( test_mode ) print_weight_array_test (weight_array, "Weight array");
+        if ( test_mode ) print_weight_array_test (weight_array, "Weight array", test_results_path);
 
 
         // Original weight array
