@@ -289,11 +289,18 @@ int main(int argc, char **argv) {
                 //                if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
                 //                    cerr << "For read A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549 didn't find any start interval" << endl;
                 //                }
-                if (current_gtf_records_splitted_it == gtf_records_splitted.end()){
-                    cerr << "reached the end of interval map 2" << endl;
-                    break;
+                if ( current_gtf_records_splitted_it == gtf_records_splitted.end() ) {
+                    if (current_bam_record->slices > 1 && current_slice > 1){
+                        cerr << "Rewind current_gtf_records_splitted_it" << endl;
+                        current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it;
+                        freeze = false;
+                        continue;
+                    } else {
+                        cerr << "reached the end of interval map 2" << endl;
+                        break;
+                    }
                 }
-                if (current_slice == current_bam_record->slices && current_bam_record->slices > 1 && (not freeze)){ // TODO Double check it
+                if (current_slice == current_bam_record->slices && current_bam_record->slices > 1 && (not freeze)){
                     current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it;
                 }
                 continue;

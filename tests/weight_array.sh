@@ -10,6 +10,7 @@ TAB_DEL_FILE=/Users/kot4or/cchmc/geep/testing_data/set_2/annotation_tab_del
 BAM_FILE=/Users/kot4or/cchmc/geep/testing_data/set_2/reads.bam
 TEST_RESULT=/Users/kot4or/cchmc/geep/testing_data/set_2/correct_results.txt
 TEST_OUTPUT=/Users/kot4or/cchmc/geep/testing_data/set_2/output_results.txt
+rm $TEST_OUTPUT
 
 #TAB_DEL_FILE=`zenity --file-selection --title="Select tab-delimited file"`
 #
