@@ -110,7 +110,7 @@ Isoform::Isoform (string line, bool gtf):
 //    cerr << endl;
 
     // BIN
-    if (not str_to_long(bin, line_splitted[0])){
+    if (not str_to_int(bin, line_splitted[0])){
         throw ("Isoform constructor error");
     }
 
@@ -144,7 +144,7 @@ Isoform::Isoform (string line, bool gtf):
     }
 
     // EXON_COUNT
-    if (not str_to_long(exon_count, line_splitted[8])){
+    if (not str_to_int(exon_count, line_splitted[8])){
         throw ("Isoform constructor error");
     }
 
@@ -393,6 +393,10 @@ bool load_annotation (const string & full_path_name,
                     ret.first->second.insert (internal_pair);
                 }
             }
+            // clear exon_starts, exon_ends, exon_frames from iso_map, because we have all that data in global_annotation_map_ptr
+            int_it->second.exon_starts.clear();
+            int_it->second.exon_ends.clear();
+            int_it->second.exon_frames.clear();
         }
     }
 

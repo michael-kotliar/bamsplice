@@ -65,7 +65,7 @@ public:
 
 class Isoform {
 public:
-    long bin; // 0
+    int bin; // 0
     string name; // 1
     string chrom; // 2
     bool strand;  // true - +, false  - - // 3
@@ -73,9 +73,9 @@ public:
     long tx_end; // 5
     long cds_start; // 6
     long cds_end; // 7
-    long exon_count; // 8
-    long length; // length of isofom = sum of all exons' lengths
-    long total_reads; // total number of reads in isoform
+    int exon_count; // 8
+    int length; // length of isofom = sum of all exons' lengths
+    int total_reads; // total number of reads in isoform
     double density; // total_reads/length
     double rpkm; // rpkm
     int index; // index that will be used in weigth array to save reads there

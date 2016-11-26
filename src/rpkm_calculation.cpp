@@ -233,7 +233,7 @@ void calculate_totReads_density (const vector<vector<double> > & weight_array, s
                 iso_it->second.density += weight_array[index][j] * weight_array[0][j];
             }
         }
-        iso_it->second.total_reads = (long)iso_it->second.density;
+        iso_it->second.total_reads = (int)iso_it->second.density;
         iso_it->second.density = 1000 * iso_it->second.total_reads / (double)iso_it->second.length;
     }
 }
