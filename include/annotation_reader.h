@@ -83,7 +83,7 @@ public:
     vector <long> exon_ends; // saves pointers to ends of the exons. not necessary to be sorted // 10
     vector <long> exon_frames; // pointers to exon frames, not necessary to be sorted // 15
 
-    int score; //11
+    double score; //11
     string name2; // 12
     cds_stat cds_start_stat; // 13
     cds_stat cds_end_stat; // 14
@@ -91,10 +91,12 @@ public:
     void print ();
 
     // Constructor
-    Isoform (string line);
+    Isoform (string line, bool gtf = false);
 
     // Empty constructor
     Isoform ();
+
+    Isoform& operator+=(const Isoform& other_iso);
 };
 
 bool str_to_cds_stat(const string &value, cds_stat &result);
@@ -107,3 +109,5 @@ void print_iso_var_map_to_file (const std::map <string, std::map <string, Isofor
 bool load_annotation (const string & full_path_name,
                       std::map <string, multimap <long, GffRecordPtr> > & global_annotation_map_ptr,
                       std::map <string, std::map <string, Isoform> > & iso_var_map);
+
+map <string, string> split_attributes (string line);

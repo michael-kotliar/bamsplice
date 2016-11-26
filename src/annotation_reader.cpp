@@ -4,15 +4,58 @@
 
 #include "annotation_reader.h"
 
+map <string, string> split_attributes (string line){
+    map <string, string> attribute_map;
+    vector<string> attributes_array = split_line(line, "; ");
+    assert (attributes_array.size() % 2 == 0); // check if attributes forms key value structure
+    for (int i = 0; i < attributes_array.size(); i+=2){
+        if ( attributes_array[i+1].length() >= 2 ){ // If we can delete doublequotes
+            attribute_map[attributes_array[i]] = string (attributes_array[i+1], 1, attributes_array[i+1].length()-2);
+        } else {
+            attribute_map[attributes_array[i]] = attributes_array[i+1];
+        }
+    }
+    return attribute_map;
+};
+
+void rearrange_array_from_gtf (vector<string> & input){
+    vector<string> output;
+
+    output.push_back("0"); //         0: bin                   (long)
+    output.push_back(input[9]); //  1: name                  (string)
+    output.push_back(input[0]); //  2: chrom                 (string)
+    output.push_back(input[6]); //  3: strand                (+/-)
+    output.push_back("0"); //         4: tx_start              (long)
+    output.push_back("0"); //         5: tx_end                (long)
+    output.push_back("0"); //         6: cds_start             (long)
+    output.push_back("0"); //         7: cds_end               (long)
+    output.push_back("1"); //         8: exon_count            (long)
+    output.push_back(input[3]); //  9: exon_starts           (long,long,long)
+    output.push_back(input[4]); // 10: exon_ends             (long,long,long)
+    output.push_back(input[5]); // 11: score                 (double)
+    output.push_back(input[8]); // 12: name2                 (string)
+    output.push_back("none"); //        13: cds_start_stat   (enum: none - default)
+    output.push_back("none"); //        14: cds_end_stat     (enum: none - default)
+    output.push_back("0"); //        15: exon_frames      (long,long,long)
+
+    input = output;
+}
 
 
 void Isoform::print (){
+    cout << "bin: " << bin << endl;
     cout << "isoform: " << name << endl;
     cout << "chrom: " << chrom << endl;
+    cout << "name: " << name << endl;
     cout << "strand: " << strand << endl;
     cout << "[tx_start, tx_end]: [" << tx_start << ", " << tx_end << "]" << endl;
     cout << "[cds_start, cds_end]: [" << cds_start << ", " << cds_end << "]" << endl;
     cout << "exon_count: " << exon_count << endl;
+    cout << "length: " << length << endl;
+    cout << "total_reads: " << total_reads << endl;
+    cout << "density: " << density << endl;
+    cout << "rpkm: " << rpkm << endl;
+    cout << "index: " << index << endl;
     cout << "exon_starts.size(): " << exon_starts.size() << endl;
     cout << "exon_ends.size(): " << exon_ends.size() << endl;
     cout << "exon_frames.size(): " << exon_frames.size() << endl;
@@ -26,7 +69,8 @@ void Isoform::print (){
     cout << "cds_end_stat: " << cds_end_stat << endl;
 }
 
-Isoform::Isoform (string line):
+
+Isoform::Isoform (string line, bool gtf):
          bin (0)
         ,name ("")
         ,chrom("")
@@ -46,7 +90,24 @@ Isoform::Isoform (string line):
         ,cds_start_stat (cds_stat::none)
         ,cds_end_stat (cds_stat::none)
 {
+
     vector<string> line_splitted = split_line(line);
+
+    if (gtf){
+        if (line_splitted[2] != "exon"){
+            throw ("Isoform constructor error: not exon");
+        }
+        map <string, string> attributes_map = split_attributes(line_splitted[8]);
+        line_splitted.pop_back();
+        line_splitted.push_back(attributes_map["gene_id"]);
+        line_splitted.push_back(attributes_map["transcript_id"]);
+        rearrange_array_from_gtf (line_splitted);
+    }
+
+//    for (int i = 0; i < line_splitted.size(); i++){
+//        cerr << i << ". " << line_splitted[i] << endl;
+//    }
+//    cerr << endl;
 
     // BIN
     if (not str_to_long(bin, line_splitted[0])){
@@ -88,8 +149,13 @@ Isoform::Isoform (string line):
     }
 
     //SCORE
-    if (not str_to_int(score, line_splitted[11])){
-        throw ("Isoform constructor error");
+    if (not str_to_double(score, line_splitted[11])){
+        if (line_splitted[11] == "."){
+            cout << "Score set to 0" << endl;
+            score = 0;
+        } else {
+            throw ("Isoform constructor error");
+        }
     }
 
     // NAME2
@@ -126,7 +192,14 @@ Isoform::Isoform (string line):
         throw ("Isoform class constructor fail");
     };
 
-    // calculating the length of isiform as sum of all exons' lengths
+    if (gtf){// update coordinates if GTF TODO double check if it's correct to do like this
+        for (int k = 0; k < exon_starts.size(); k++){
+            exon_starts[k]--;
+        }
+    }
+
+
+    // calculating the length of isoform as sum of all exons' lengths
     for (int i = 0; i < exon_count; i++){
         length += (long)(exon_ends[i] - exon_starts[i]);
     }
@@ -154,6 +227,23 @@ Isoform::Isoform ():
         ,cds_end_stat (cds_stat::none)
 {
 
+}
+
+Isoform& Isoform::operator+=(const Isoform& other_iso){
+    if (name  != other_iso.name  ||
+        name2 != other_iso.name2 ||
+        chrom != other_iso.chrom ||
+        strand != other_iso.strand){
+
+        cerr << "Isoform += operator error. Parameters mismatch" <<endl;
+        return *this;
+    }
+    exon_count += other_iso.exon_count;
+    length += other_iso.length;
+    exon_starts.insert(exon_starts.end(), other_iso.exon_starts.begin(), other_iso.exon_starts.end());
+    exon_ends.insert(exon_ends.end(), other_iso.exon_ends.begin(), other_iso.exon_ends.end());
+    exon_frames.insert(exon_frames.end(), other_iso.exon_frames.begin(), other_iso.exon_frames.end());
+    return *this;
 }
 
 
@@ -237,14 +327,26 @@ bool load_annotation (const string & full_path_name,
         cout << "Cannot open file " << full_path_name << endl;
         return false;
     }
+
+    // check if annotation input is in gtf format
+    bool gtf = false;
+    string annotation_file_ext (full_path_name, full_path_name.find_last_of('.')+1);
+    if (annotation_file_ext == "gtf"){
+        cerr << "Set to read from gtf annotation file format" << endl;
+        gtf = true;
+    } else {
+        cerr << "Set to read from tab delimited annotation file format" << endl;
+    }
+
     string line;
     while (getline(input_stream, line)) {
-        if (string_tools::include_key(line, "name")) { // to filter header lines
+        if (string_tools::include_key(line, "#")) { // to filter commented lines
+            cout << "Filtered line: " << line << endl;
             continue;
         }
         Isoform current_isoform;
         try {
-            current_isoform = Isoform (line);
+            current_isoform = Isoform (line, gtf);
         } catch (...){
             cout << "Skipped line [" << line << "]" << endl;
             continue;
@@ -254,33 +356,45 @@ bool load_annotation (const string & full_path_name,
         pair <string, Isoform> internal_pair_for_iso_var_map (current_isoform.name, current_isoform);
         std::map <string, Isoform> internal_iso_var_map;
         internal_iso_var_map.insert(internal_pair_for_iso_var_map);
+
         pair <std::map <string, std::map <string, Isoform> >::iterator, bool> res;
         pair <string, std::map <string, Isoform> > external_pair_for_iso_var_map (current_isoform.chrom, internal_iso_var_map);
         res = iso_var_map.insert (external_pair_for_iso_var_map);
         if (res.second == false){
-            res.first->second.insert(internal_pair_for_iso_var_map);
-        }
-
-        GffRecordPtr previous_annotation; // TODO maybe this is the reason of error. Try to create empty GffRecord object
-        previous_annotation.reset();
-
-        for (int i = 0; i < current_isoform.exon_count; i++){
-            stringstream ss;
-            ss << i+1;
-            string exon_id = ss.str();
-
-            GffRecordPtr current_gff (new GffRecord (current_isoform.exon_starts[i], current_isoform.exon_ends[i], exon_id, current_isoform.name, previous_annotation, current_isoform.strand) );
-            previous_annotation = current_gff;
-            pair <long, GffRecordPtr> internal_pair (current_isoform.exon_starts[i], current_gff);
-            multimap <long, GffRecordPtr> internal_multimap;
-            internal_multimap.insert (internal_pair);
-            pair <std::map <string, multimap <long, GffRecordPtr> >::iterator, bool> ret;
-            pair <string, multimap <long, GffRecordPtr> > external_pair (current_isoform.chrom, internal_multimap);
-            ret = global_annotation_map_ptr.insert (external_pair);
-            if (ret.second == false) {
-                ret.first->second.insert (internal_pair);
+            pair <std::map <string, Isoform>::iterator, bool> insert_iso_res;
+            insert_iso_res = res.first->second.insert(internal_pair_for_iso_var_map);
+            if (insert_iso_res.second == false){
+                // we already have this isoform in our map std::map <string, Isoform>
+                insert_iso_res.first->second += current_isoform;
             }
         }
     }
+
+    GffRecordPtr previous_annotation;
+    previous_annotation.reset();
+
+    for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
+        cout << "Chromosome: " << ext_it->first << endl;
+        for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
+            for (int i = 0; i < int_it->second.exon_count; i++){
+                stringstream ss;
+                ss << i+1;
+                string exon_id = ss.str();
+
+                GffRecordPtr current_gff (new GffRecord (int_it->second.exon_starts[i], int_it->second.exon_ends[i], exon_id, int_it->second.name, previous_annotation, int_it->second.strand) );
+                previous_annotation = current_gff;
+                pair <long, GffRecordPtr> internal_pair (int_it->second.exon_starts[i], current_gff);
+                multimap <long, GffRecordPtr> internal_multimap;
+                internal_multimap.insert (internal_pair);
+                pair <std::map <string, multimap <long, GffRecordPtr> >::iterator, bool> ret;
+                pair <string, multimap <long, GffRecordPtr> > external_pair (int_it->second.chrom, internal_multimap);
+                ret = global_annotation_map_ptr.insert (external_pair);
+                if (ret.second == false) {
+                    ret.first->second.insert (internal_pair);
+                }
+            }
+        }
+    }
+
     return true;
 }

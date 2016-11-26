@@ -98,23 +98,43 @@ int main(int argc, char **argv) {
         return 0;
     }
     cout << endl;
-    print_iso_var_map (iso_var_map); // for DEBUG only
+//    print_iso_var_map (iso_var_map); // for DEBUG only
     cout << endl;
 
-    // FOR DEBUG USE ONLY
-    //    cout << "ANNOTATIONS" << endl;
-    //    for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
-    //        cout << "Chromosome: " << chrom_it->first << endl;
-    //        for (auto start_it = chrom_it->second.begin(); start_it!=chrom_it->second.end(); ++start_it){
-    //            assert (start_it->second.use_count() > 0);
-    //            cout << "  " << start_it->second->exon_id  << " " << start_it->second->isoform_id << " - [";
-    //            cout << start_it->second->start_pose << "," << start_it->second->end_pose << "]" << endl;
-    //            for (auto bam_record_it = start_it->second->bam_records.begin(); bam_record_it != start_it->second->bam_records.end(); ++bam_record_it){
-    //                assert (bam_record_it->use_count() > 0);
-    //                cout << bam_record_it->get()->read_id << " ";
-    //            }
-    //        }
-    //    }
+//     FOR DEBUG USE ONLY
+//        cout << "ANNOTATIONS" << endl;
+//        for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
+//            cout << "Chromosome: " << chrom_it->first << endl;
+//            for (auto start_it = chrom_it->second.begin(); start_it!=chrom_it->second.end(); ++start_it){
+//                assert (start_it->second.use_count() > 0);
+//                cout << " exon: [" << start_it->second->exon_id << "]"
+//                     << " isoform: [" << start_it->second->isoform_id << "]"
+//                     << " start/stop: [" << start_it->second->start_pose << "," << start_it->second->end_pose << "]"
+//                     << " strand: [" << start_it->second->strand << "]"
+//                     << " readscount: [" << start_it->second->reads_count << "]";
+//                if (start_it->second->previous_gff.use_count() > 0){
+//                    cout << " previous gtf: [" << start_it->second->previous_gff.get()->exon_id <<", " << start_it->second->previous_gff.get()->isoform_id << "]";
+//                } else {
+//                    cout << " previous gtf: [" << "null" << "]";
+//                }
+//                cout << endl;
+//                cout << " Reads: [";
+//                for (auto bam_record_it = start_it->second->bam_records.begin(); bam_record_it != start_it->second->bam_records.end(); ++bam_record_it){
+//                    assert (bam_record_it->use_count() > 0);
+//                    cout << bam_record_it->get()->read_id << " ";
+//                }
+//                cout << "]" << endl;
+//            }
+//        }
+//        for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
+//            cout << "Chromosome: " << ext_it->first << endl;
+//            for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
+//                cout << setw(10) << "  isoform: " << setw(15) << int_it->first << endl;
+//                int_it->second.print();
+//            }
+//        }
+
+
 
     cerr << "Gathering info about bam file" << endl;
     BamGeneralInfo bam_general_info;

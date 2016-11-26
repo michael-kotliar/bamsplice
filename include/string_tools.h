@@ -31,7 +31,7 @@ namespace string_tools {
     }
 
     inline bool include_key(const string &line, const string &key_sequence) {
-        vector<string> key_splitted = split_line(key_sequence);
+        vector<string> key_splitted = split_line(key_sequence, "|");
         for (int i = 0; i < key_splitted.size(); i++) {
             if (line.find(key_splitted[i]) != std::string::npos) {
                 return true;
@@ -89,6 +89,32 @@ namespace string_tools {
             return false;
         }
         var = temp;
+        return true;
+    }
+
+    inline bool str_to_double(double &var, const string &value){
+        int temp;
+        try {
+            temp = boost::lexical_cast<double>(value);
+        }
+        catch(...){
+            cout << "Bad lexical cast of " << value << " as double" << endl;
+            return false;
+        }
+        var = temp;
+        return true;
+    }
+
+    inline bool str_to_double_ptr(boost::shared_ptr<double> &ptr, const string &value){
+        int temp;
+        try {
+            temp = boost::lexical_cast<double>(value);
+        }
+        catch(...){
+            cout << "Bad lexical cast of " << value << " as double" << endl;
+            return false;
+        }
+        ptr.reset (new double (temp));
         return true;
     }
 
