@@ -69,9 +69,9 @@ int main(int argc, char **argv) {
     // read from BAM file
     BamReader bam_reader;
     if (not bam_reader.Open(bam_full_path_name)) {
-        cout << "Couldn't open file " << bam_full_path_name << endl;
+        cerr << "Couldn't open file " << bam_full_path_name << endl;
         return 0;
-    } else cout << "Open " << bam_reader.GetFilename() << endl;
+    } else cerr << "Open " << bam_reader.GetFilename() << endl;
 
     cout << endl << endl;
 
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     // TODO chromosome_info_map - saves correspondence between chromosome name and RefId from the BamReader object
     std::map <string, pair <int, int> > chromosome_info_map = get_chromosome_map_info (bam_reader);
 
-    print_ref_info (chromosome_info_map); // Only for DEBUG
+//    print_ref_info (chromosome_info_map); // Only for DEBUG
 
     // Check if current bam file is indexed (and that index data is loaded into program)
     if (not make_index(bam_reader)){
@@ -97,9 +97,9 @@ int main(int argc, char **argv) {
     if (not load_annotation (annotation_full_path_name, global_annotation_map_ptr, iso_var_map)){
         return 0;
     }
-    cout << endl;
+//    cout << endl;
 //    print_iso_var_map (iso_var_map); // for DEBUG only
-    cout << endl;
+//    cout << endl;
 
 //     FOR DEBUG USE ONLY
 //        cout << "ANNOTATIONS" << endl;
@@ -143,34 +143,32 @@ int main(int argc, char **argv) {
 
     for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it) {
 
-        cout << endl;
+//        cout << endl;
         string chrom = chrom_it->first;
-        cout << "Current chromosome from annotation file: " << chrom << endl;
+        cerr << "Current chromosome from annotation file: " << chrom << endl;
         auto map_it = chromosome_info_map.find(chrom);
         if (map_it == chromosome_info_map.end()){
-            cout << "Cannot locate RefId for " << chrom << endl;
-            cout << "Skip the whole chromosome from annotation file" << endl;
+            cerr << "Cannot locate RefId for " << chrom << endl;
+            cerr << "Skip the whole chromosome from annotation file" << endl;
             continue;
         }
         int ref_id = map_it->second.first;
         int length = map_it->second.second;
-        cout << "Found corresponding RefId:  " << ref_id << endl;
+        cerr << "Found corresponding RefId:  " << ref_id << endl;
         if (not bam_reader.HasIndex()){
-            cout << "ERROR: Current bam file isn't indexed" << endl;
-            cout << "EXIT. Find a bug in a code. You suppose to index BAM file right after opening" << endl;
+            cerr << "ERROR: Current bam file isn't indexed" << endl;
+            cerr << "EXIT. Find a bug in a code. You suppose to index BAM file right after opening" << endl;
             return 0;
         }
         cout << "Current BAM file is indexed" << endl;
-        cout << "Trying to set region limited by current chromosome: " << chrom << endl;
+        cerr << "Trying to set region limited by current chromosome: " << chrom << endl;
 
-
-        // TODO Could couse a problem of mapped reads count, because we skip regions
         if (not bam_reader.SetRegion(ref_id, 0, ref_id, length)){
-            cout << "Cannot set region. Exit" << endl;
-            cout << bam_reader.GetErrorString(); // added just in case
+            cerr << "Cannot set region. Exit" << endl;
+            cerr << bam_reader.GetErrorString(); // added just in case
             return 0;
         }
-        cout << "Region from BAM file is succesfully set for chromosome " << chrom << " with RefId = " << ref_id << endl << endl;
+        cerr << "Region from BAM file is succesfuly set for chromosome " << chrom << " with RefId = " << ref_id << endl << endl;
 
         // Making an interval map on the base of the annotation.
         // By default for each current_map_element we add one the corresponding annotation pointer
@@ -232,7 +230,7 @@ int main(int argc, char **argv) {
             }
             // Check if gtf records array is already empty. Break the while loop
             if (current_gtf_records_splitted_it == gtf_records_splitted.end()){
-                cerr << "reached the end of interval map 1" << endl;
+                cerr << endl << "reached the end of interval map" << endl;
                 break;
             }
 
@@ -258,7 +256,7 @@ int main(int argc, char **argv) {
                 current_slice = 0;
                 iso_map.clear();
                 backup_current_gtf_records_splitted_it = current_gtf_records_splitted_it; // update the backup for gff iterator
-                cout << "iso_map is cleared because of the new read" << endl;
+//                cout << "iso_map is cleared because of the new read" << endl;
             }
 
             // increment current_slice (position inside a spliced read)
@@ -272,12 +270,12 @@ int main(int argc, char **argv) {
                 previous_bam_record = *current_bam_record; // update previous_bam_record with current value
                 if ( current_gtf_records_splitted_it == gtf_records_splitted.end() ) {
                     if (current_bam_record->slices > 1 && current_slice > 1){
-                        cerr << "Rewind current_gtf_records_splitted_it" << endl;
+//                        cerr << "Rewind current_gtf_records_splitted_it" << endl;
                         current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it;
                         freeze = false;
                         continue;
                     } else {
-                        cerr << "reached the end of interval map" << endl;
+                        cerr << endl << "reached the end of interval map" << endl;
                         break;
                     }
                 }
@@ -334,8 +332,8 @@ int main(int argc, char **argv) {
                     ret = iso_map.insert(input_pair);
                     // If already exist with the same isoform key - add annotation to the corresponding set of the map
                     if (ret.second == false) {
-                        cout << "Isoform " << input_pair.first << " already exists" << endl;
-                        cout << "Updating the set with a value " << gff_it->get()->exon_id << endl;
+//                        cout << "Isoform " << input_pair.first << " already exists" << endl;
+//                        cout << "Updating the set with a value " << gff_it->get()->exon_id << endl;
                         ret.first->second.insert(temp_set.begin(), temp_set.end());
                     }
                 }
@@ -363,9 +361,9 @@ int main(int argc, char **argv) {
                     // we caught the correct spliced read
                     // if not - go to next isoform
                     if (map_iterator->second.size() == slice_number) {
-                        cout << "Found possible location of spliced read" << endl;
+//                        cout << "Found possible location of spliced read" << endl;
                         if (not form_line (map_iterator->second)) {
-                            cout << "Current set of annotations doesn't form linked list" << endl;
+//                            cout << "Current set of annotations doesn't form linked list" << endl;
                             continue; // go to next isoform if annotation in current set don't form an "unbreakable" line
                         }
 
@@ -375,7 +373,6 @@ int main(int argc, char **argv) {
                             BamRecordPtr bam_record_to_put_in_array = current_bam_record; // put it just in case. should be the same as just push original pointer to array, 'cos push copies
                             gff_it->annotation->bam_records.push_back(bam_record_to_put_in_array);
                             gff_it->annotation->reads_count++;
-                            cout <<"[***]" << endl;
                             assert (gff_it->annotation.use_count() > 0);
                             assert (bam_record_to_put_in_array.use_count() > 0);
 //                            cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << bam_record_to_put_in_array->read_id << endl;
@@ -439,9 +436,6 @@ int main(int argc, char **argv) {
 
     }
 
-    cout << "mapped_reads_counter: " << bam_general_info.aligned <<endl;
-    cout << "total_reads_counter: " << bam_general_info.total << endl;
-    cerr << endl;
     cerr << "Calculate rpkm" << endl;
 
     calculate_rpkm (iso_var_map, bam_general_info.aligned);

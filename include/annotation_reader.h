@@ -33,9 +33,9 @@ public:
     long start_pose; // start position of annotation
     long end_pose; // stop position of annotation
     string exon_id; // text-identificator of current annotation. Looks like we will use it only for debug
-    string isoform_id; // set the name of the isofom=rm to which current annotation belongs
+    string isoform_id; // set the name of the isoform to which current annotation belongs
     vector < BamRecordPtr > bam_records; // array of pointers to all of the reads, which belongs to this exon. Need this for debug, than we can delete this field
-    long reads_count; // total number of reads, which belongs to this exon
+    int reads_count; // total number of reads, which belongs to this exon
     bool strand; // true for +
     GffRecordPtr previous_gff; // ptr to the previous annotation in the same isoform. In NULL - first annotation in current isoform
 

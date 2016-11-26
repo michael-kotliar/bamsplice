@@ -14,10 +14,10 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
     }
 
     if (current_bam_record->start_pose < current_gtf_records_splitted_it->first.lower()) {
-        cout << "   Skip read " << current_bam_record->read_id << " [" <<
-             current_bam_record->start_pose << "," <<
-             current_bam_record->end_pose << "]" << endl;
-        cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
+//        cout << "   Skip read " << current_bam_record->read_id << " [" <<
+//             current_bam_record->start_pose << "," <<
+//             current_bam_record->end_pose << "]" << endl;
+//        cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
         freeze = false; // Set freeze to false to change current_bam_record
         allow_skip_rest = true;
         return false;
@@ -25,8 +25,8 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
     allow_skip_rest = false;
     if (current_bam_record->start_pose >= current_gtf_records_splitted_it->first.upper()) {
 //        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
-        cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
-             << current_gtf_records_splitted_it->first.upper() << "]" << endl;
+//        cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
+//             << current_gtf_records_splitted_it->first.upper() << "]" << endl;
         current_gtf_records_splitted_it++;
         freeze = true; // Set freeze to true to prevent changing current_bam_record
         return false;
@@ -119,13 +119,13 @@ set<GffRecordPtr> get_intersection (interval_map<long, MapElement>::iterator inp
     set_intersection(input_1->second.gtf_records.begin(),input_1->second.gtf_records.end(),
                      input_2->second.gtf_records.begin(),input_2->second.gtf_records.end(),
                      std::inserter(intersection, intersection.begin()));
-    cout << "   Intersection : ";
+//    cout << "   Intersection : ";
     for (auto intersection_segment_annotation_it = intersection.begin();
          intersection_segment_annotation_it != intersection.end(); ++intersection_segment_annotation_it){
         assert (intersection_segment_annotation_it->use_count() > 0);
-        cout << " " << intersection_segment_annotation_it->get()->exon_id << " ("<< intersection_segment_annotation_it->get()->isoform_id << "), ";
+//        cout << " " << intersection_segment_annotation_it->get()->exon_id << " ("<< intersection_segment_annotation_it->get()->isoform_id << "), ";
     }
-    cout << endl;
+//    cout << endl;
     return intersection;
 }
 

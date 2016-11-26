@@ -196,11 +196,11 @@ int run_cycle (vector <vector <double> > & weight_array){
 //        cout << endl;
 
         cycles++;
-        cerr << "Cycle: " << cycles << "\r";
+        cerr << "Cycle: " << cycles << "; ";
         subtract_matrix(tmp_matrix, weight_array);
 //        print_weight_array(tmp_matrix, "Substracted matrix");
         double sum = sum_all (tmp_matrix);
-        cerr << "sum: " << sum << endl;
+        cerr << "Sum: " << sum << endl;
         if( sum < cutoff ){
             break;
         }
