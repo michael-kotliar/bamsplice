@@ -3,7 +3,10 @@
 //
 #include "test.h"
 
+bool test_mode = false;
+
 void print_weight_array_test( vector <vector <double> > weight_array, const string & title, const string & path){
+    cerr << "Export test data to " << path << endl;
     ofstream output_stream;
     output_stream.open (path, std::ofstream::app);
     if (output_stream.is_open()){

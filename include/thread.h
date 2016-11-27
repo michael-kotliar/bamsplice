@@ -24,6 +24,7 @@
 
 #include "rpkm_calculation.h"
 #include <boost/thread.hpp>
+#include "test.h"
 
 using namespace std;
 
@@ -31,4 +32,5 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                  std::map <string, pair <int, int> > chromosome_info_map,
                  std::map <string, std::map <string, Isoform> > & iso_var_map,
                  string bam_full_path_name,
-                 int thread_number);
+                 int thread_number,
+                 string test_results_path);

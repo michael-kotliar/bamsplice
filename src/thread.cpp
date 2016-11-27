@@ -8,7 +8,8 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                  std::map <string, pair <int, int> > chromosome_info_map,
                  std::map <string, std::map <string, Isoform> > & iso_var_map,
                  string bam_full_path_name,
-                 int thread_number
+                 int thread_number,
+                 string test_results_path
                 ){
     cerr << "[" << thread_number << "] " << "Run thread for chromosomes: " << endl;
     for (int i = 0; i < chrom_vector.size(); i++){
@@ -290,7 +291,12 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             freeze = false;
         }
 
-//        if ( test_mode ) print_weight_array_test (weight_array, "Weight array", test_results_path);
+        if ( test_mode ) {
+            stringstream ss;
+            ss << "_" << thread_number;
+            test_results_path += ss.str();
+            print_weight_array_test (weight_array, "Weight array", test_results_path);
+        }
 
 
         // Original weight array

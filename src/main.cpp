@@ -26,11 +26,12 @@ using namespace std;
 using namespace boost::icl;
 using namespace BamTools;
 
-bool test_mode = false;
+
 
 
 int main(int argc, char **argv) {
     // Read the paths from arguments
+
     int threads_number = 2;
 
     if (argc < 3){
@@ -41,6 +42,7 @@ int main(int argc, char **argv) {
     // if put --test instead of path to the log file
     if ( argc > 3 && string(argv[3]) == "--test" ){
         test_mode = true;
+        cerr << "Test mode enabled" << endl;
     }
 
     string test_results_path = "";
@@ -199,7 +201,7 @@ int main(int argc, char **argv) {
                 cerr << start_subvector + j << ". " << chrom_vector[j]->first << endl;
             }
 
-            process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t));
+            process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t, test_results_path));
     }
     process_threads.join_all();
 
