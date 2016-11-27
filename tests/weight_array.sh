@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Clean build directory
-rm -rf ../build/*
+#rm -rf ../build/*
 cd ../build
 cmake  ..
 make
@@ -10,7 +10,8 @@ TAB_DEL_FILE=/Users/kot4or/cchmc/geep/testing_data/set_2/annotation_tab_del
 BAM_FILE=/Users/kot4or/cchmc/geep/testing_data/set_2/reads.bam
 TEST_RESULT=/Users/kot4or/cchmc/geep/testing_data/set_2/correct_results.txt
 TEST_OUTPUT=/Users/kot4or/cchmc/geep/testing_data/set_2/output_results.txt
-rm $TEST_OUTPUT
+rm $TEST_OUTPUT"_0"
+rm $TEST_OUTPUT"_1"
 
 #TAB_DEL_FILE=`zenity --file-selection --title="Select tab-delimited file"`
 #
@@ -55,12 +56,18 @@ rm $TEST_OUTPUT
 # Running with parameters
 export DYLD_LIBRARY_PATH=/Users/kot4or/workspaces/geep_ws/geep/lib/
 ../bin/geep $BAM_FILE $TAB_DEL_FILE --test $TEST_OUTPUT > /dev/null 2>&1
-diff --ignore-blank-lines --ignore-space-change ${TEST_RESULT} ${TEST_OUTPUT}
+diff --ignore-blank-lines --ignore-space-change ${TEST_RESULT}"_0" ${TEST_OUTPUT}"_0"
 if [[ $? == "0" ]]
 then
   echo "CORRECT"
 else
   echo "ERROR"
 fi
-
+diff --ignore-blank-lines --ignore-space-change ${TEST_RESULT}"_1" ${TEST_OUTPUT}"_1"
+if [[ $? == "0" ]]
+then
+  echo "CORRECT"
+else
+  echo "ERROR"
+fi
 
