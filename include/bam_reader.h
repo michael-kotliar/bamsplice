@@ -20,7 +20,7 @@
 #define TEST_1_BAM_READER_H
 #endif //TEST_1_BAM_READER_H
 #include "boost/date_time/posix_time/posix_time.hpp"
-
+#include <boost/thread.hpp>
 
 using namespace std;
 using namespace BamTools;

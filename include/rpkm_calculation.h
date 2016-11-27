@@ -8,11 +8,14 @@
 #include <cassert>
 #include <cmath>
 #include "interval_map.h"
-
+#include <boost/thread/mutex.hpp>
 
 #ifndef TEST_1_RPKM_CALCULATION_H
 #define TEST_1_RPKM_CALCULATION_H
 #endif //TEST_1_RPKM_CALCULATION_H
+
+
+static boost::mutex iso_var_map_mutex;
 
 using namespace std;
 void print_isoform_by_name (const vector<vector<double> > & data_array,

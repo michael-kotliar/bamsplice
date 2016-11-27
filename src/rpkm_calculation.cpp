@@ -196,11 +196,11 @@ int run_cycle (vector <vector <double> > & weight_array){
 //        cout << endl;
 
         cycles++;
-        cerr << "Cycle: " << cycles << "; ";
+//        cerr << "Cycle: " << cycles << "; ";
         subtract_matrix(tmp_matrix, weight_array);
 //        print_weight_array(tmp_matrix, "Substracted matrix");
         double sum = sum_all (tmp_matrix);
-        cerr << "Sum: " << sum << endl;
+//        cerr << "Sum: " << sum << endl;
         if( sum < cutoff ){
             break;
         }
@@ -225,7 +225,7 @@ void print_array (const vector <double> & intput_array, const string & title, st
 
 
 void calculate_totReads_density (const vector<vector<double> > & weight_array, std::map <string, Isoform> & iso_map){
-
+    boost::mutex::scoped_lock scoped_lock(iso_var_map_mutex);
     for (auto iso_it = iso_map.begin(); iso_it != iso_map.end(); ++iso_it) {
         int index = iso_it->second.index;
         for (int j = 0; j < weight_array[index].size(); j++) {

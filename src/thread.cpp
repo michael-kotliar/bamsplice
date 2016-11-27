@@ -4,49 +4,52 @@
 #include "thread.h"
 
 
-void process (std::map <string, multimap <long, GffRecordPtr> >::iterator start_it,
-                 std::map <string, multimap <long, GffRecordPtr> >::iterator stop_it,
+void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector,
                  std::map <string, pair <int, int> > chromosome_info_map,
                  std::map <string, std::map <string, Isoform> > & iso_var_map,
-                 string bam_full_path_name
+                 string bam_full_path_name,
+                 int thread_number
                 ){
-    cerr << "run thread" << endl;
+    cerr << "[" << thread_number << "] " << "Run thread for chromosomes: " << endl;
+    for (int i = 0; i < chrom_vector.size(); i++){
+        cerr << "[" << thread_number << "] " << chrom_vector[i]->first << ", ";
+    }
+    cerr << endl;
     BamReader bam_reader;
     if (not bam_reader.Open(bam_full_path_name)) {
-        cerr << "Couldn't open file " << bam_full_path_name << endl;
+        cerr << "[" << thread_number << "] " << "Couldn't open file " << bam_full_path_name << endl;
         return;
-    } else cerr << "Open " << bam_reader.GetFilename() << endl;
+    } else cerr << "[" << thread_number << "] " << "Open " << bam_reader.GetFilename() << endl;
 
-    for (auto chrom_it = start_it; chrom_it != stop_it; ++chrom_it) {
-
-//        cout << endl;
+    for (int k = 0; k < chrom_vector.size(); k++) {
+        std::map <string, multimap <long, GffRecordPtr> >::iterator chrom_it = chrom_vector[k];
         string chrom = chrom_it->first;
-        cerr << "Current chromosome from annotation file: " << chrom << endl;
+        cerr << "[" << thread_number << "] " << "Current chromosome from annotation file: " << chrom << endl;
         auto map_it = chromosome_info_map.find(chrom);
         if (map_it == chromosome_info_map.end()){
-            cerr << "Cannot locate RefId for " << chrom << endl;
-            cerr << "Skip the whole chromosome from annotation file" << endl;
+            cerr << "[" << thread_number << "] " << "Cannot locate RefId for " << chrom << endl;
+            cerr << "[" << thread_number << "] " << "Skip the whole chromosome from annotation file" << endl;
             continue;
         }
         int ref_id = map_it->second.first;
         int length = map_it->second.second;
-        cerr << "Found corresponding RefId:  " << ref_id << endl;
+        cerr << "[" << thread_number << "] " << "Found corresponding RefId:  " << ref_id << endl;
 
         if (bam_reader.LocateIndex(BamIndex::STANDARD)){
-            cerr << "Located and loaded index file from disk" << endl;
+            cerr << "[" << thread_number << "] " << "Located and loaded index file from disk" << endl;
         } else if (not bam_reader.HasIndex()){
-            cerr << "ERROR: Current bam file isn't indexed" << endl;
-            cerr << "EXIT. Find a bug in a code. You suppose to index BAM file right after opening" << endl;
+            cerr << "[" << thread_number << "] " << "ERROR: Current bam file isn't indexed" << endl;
+            cerr << "[" << thread_number << "] " << "EXIT. Find a bug in a code. You suppose to index BAM file right after opening" << endl;
         }
-        cout << "Current BAM file is indexed" << endl;
-        cerr << "Trying to set region limited by current chromosome: " << chrom << endl;
+        cout << "[" << thread_number << "] " << "Current BAM file is indexed" << endl;
+        cerr << "[" << thread_number << "] " << "Trying to set region limited by current chromosome: " << chrom << endl;
 
         if (not bam_reader.SetRegion(ref_id, 0, ref_id, length)){
-            cerr << "Cannot set region. Exit" << endl;
-            cerr << bam_reader.GetErrorString(); // added just in case
+            cerr << "[" << thread_number << "] " << "Cannot set region. Exit" << endl;
+            cerr << "[" << thread_number << "] " << bam_reader.GetErrorString(); // added just in case
             return;
         }
-        cerr << "Region from BAM file is succesfuly set for chromosome " << chrom << " with RefId = " << ref_id << endl << endl;
+        cerr << "[" << thread_number << "] " << "Region from BAM file is succesfuly set for chromosome " << chrom << " with RefId = " << ref_id << endl << endl;
 
         // Making an interval map on the base of the annotation.
         // By default for each current_map_element we add one the corresponding annotation pointer
@@ -94,9 +97,8 @@ void process (std::map <string, multimap <long, GffRecordPtr> >::iterator start_
         std::map<string, set<GffAndStartStopIt> > iso_map; // map to arrange exons according to the isoform key
         BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
-        cerr << "Processing reads" << endl;
+        cerr << "[" << thread_number << "] " << "Processing reads" << endl;
         int reads_tem_count = 0;
-        static int lower_index = 0;
         while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
             reads_tem_count++;
             if (reads_tem_count % 1000 == 0){
@@ -108,7 +110,7 @@ void process (std::map <string, multimap <long, GffRecordPtr> >::iterator start_
             }
             // Check if gtf records array is already empty. Break the while loop
             if (current_gtf_records_splitted_it == gtf_records_splitted.end()){
-                cerr << endl << "reached the end of interval map" << endl;
+                cerr << endl << "[" << thread_number << "] " << "reached the end of interval map" << endl;
                 break;
             }
 
@@ -153,7 +155,7 @@ void process (std::map <string, multimap <long, GffRecordPtr> >::iterator start_
                         freeze = false;
                         continue;
                     } else {
-                        cerr << endl << "reached the end of interval map" << endl;
+                        cerr << endl << "[" << thread_number << "] " << "reached the end of interval map" << endl;
                         break;
                     }
                 }
@@ -266,7 +268,7 @@ void process (std::map <string, multimap <long, GffRecordPtr> >::iterator start_
 //                            cout << "length = " << horizontal_koef << endl;
                             // FOR DEBUG ONLY
                             if ((global_koef * vertical_koef * (double)horizontal_koef) == 0) {
-                                cerr << "Something went wrong. Find a bug" << endl;
+                                cerr << "[" << thread_number << "] " << "Something went wrong. Find a bug" << endl;
                                 throw ("Error: dividing by zero");
                             }
                             double weight = 1 / (global_koef * vertical_koef * (double)horizontal_koef);
@@ -303,14 +305,13 @@ void process (std::map <string, multimap <long, GffRecordPtr> >::iterator start_
 
         //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
 
-        cerr << "Started to run cycles" << endl;
+        cerr << "[" << thread_number << "] " << "Started to run cycles" << endl;
         int cycles = run_cycle (weight_array);
-        cerr << "Finished to run cycles : " << cycles << endl;
+        cerr << "[" << thread_number << "] " << "Finished to run cycles : " << cycles << endl;
         print_weight_array(weight_array, "Final density array");
         cout << endl;
         calculate_totReads_density (weight_array, iso_var_map[chrom]);
         cout << endl << endl;
-
-
     }
+    cerr << "[" << thread_number << "] " << "Finish" << endl;
 }

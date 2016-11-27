@@ -27,8 +27,8 @@
 
 using namespace std;
 
-void process (std::map <string, multimap <long, GffRecordPtr> >::iterator start_it,
-                 std::map <string, multimap <long, GffRecordPtr> >::iterator stop_it,
+void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector,
                  std::map <string, pair <int, int> > chromosome_info_map,
                  std::map <string, std::map <string, Isoform> > & iso_var_map,
-                 string bam_full_path_name);
+                 string bam_full_path_name,
+                 int thread_number);

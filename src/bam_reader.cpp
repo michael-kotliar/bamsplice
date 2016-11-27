@@ -87,14 +87,19 @@ bool flag_check (const BamAlignment & al){
 
 // Gets the new read fro the BAM file through BamReader object
 bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze){
-    static list <BamRecordPtr> saved_reads; // save all of single reads, which we got from the spliced read
+
+    static boost::thread_specific_ptr< list <BamRecordPtr> > saved_reads_tls;
+    if( ! saved_reads_tls.get() ) {
+        saved_reads_tls.reset( new list <BamRecordPtr> );
+    }
+
     if (freeze and bam_record){
         return true;
     }
     // try to get from the previously stored list (works in case of spliced reads)
-    if (not saved_reads.empty()){
-        bam_record = saved_reads.front();
-        saved_reads.pop_front();
+    if (not saved_reads_tls->empty()){
+        bam_record = saved_reads_tls->front();
+        saved_reads_tls->pop_front();
         return true;
     }
     BamAlignment current_alignment;
@@ -104,14 +109,40 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool fre
             bam_record.reset();
             return false;
         }
-        saved_reads = split_to_single_reads (current_alignment);
-        bam_record = saved_reads.front();
-        saved_reads.pop_front();
+        saved_reads_tls.reset (new list <BamRecordPtr> (split_to_single_reads (current_alignment)) );
+        bam_record = saved_reads_tls->front();
+        saved_reads_tls->pop_front();
         return true;
     } else {
         bam_record.reset();
         return false;
     }
+
+//    static list <BamRecordPtr> saved_reads; // save all of single reads, which we got from the spliced read
+//    if (freeze and bam_record){
+//        return true;
+//    }
+//    // try to get from the previously stored list (works in case of spliced reads)
+//    if (not saved_reads.empty()){
+//        bam_record = saved_reads.front();
+//        saved_reads.pop_front();
+//        return true;
+//    }
+//    BamAlignment current_alignment;
+//    if (bam_reader.GetNextAlignment(current_alignment)){
+////        cout << "DEBUG: " << current_alignment.Position << " " << current_alignment.Length << endl;
+//        if (not flag_check (current_alignment)) {
+//            bam_record.reset();
+//            return false;
+//        }
+//        saved_reads = split_to_single_reads (current_alignment);
+//        bam_record = saved_reads.front();
+//        saved_reads.pop_front();
+//        return true;
+//    } else {
+//        bam_record.reset();
+//        return false;
+//    }
 }
 
 

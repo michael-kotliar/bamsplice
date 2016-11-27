@@ -13,6 +13,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 
+
 //#include "interval_map.h"
 //#include "rpkm_calculation.h"
 
@@ -30,7 +31,7 @@ bool test_mode = false;
 
 int main(int argc, char **argv) {
     // Read the paths from arguments
-    int threads_number = 1;
+    int threads_number = 2;
 
     if (argc < 3){
         cerr << "Set <full path to bam-file> <full path to tab-delimited file>" << endl;
@@ -83,7 +84,7 @@ int main(int argc, char **argv) {
     // chromosome_info_map - saves correspondence between chromosome name and RefId from the BamReader object
     std::map <string, pair <int, int> > chromosome_info_map = get_chromosome_map_info (bam_reader);
 
-    //    print_ref_info (chromosome_info_map); // Only for DEBUG
+//        print_ref_info (chromosome_info_map); // Only for DEBUG
 
     // Check if current bam file is indexed (and that index data is loaded into program)
     if (not make_index(bam_reader)){
@@ -150,20 +151,105 @@ int main(int argc, char **argv) {
 
 
     // TODO run thread
-    std::map <string, multimap <long, GffRecordPtr> >::iterator start_it = global_annotation_map_ptr.begin();
-    std::map <string, multimap <long, GffRecordPtr> >::iterator stop_it = global_annotation_map_ptr.end();
+
+    // Get intersection of chrom names in bam and annotaion file, save iterators from global_annotation_map_ptr
+    vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > intersection_array;
+    for (auto bam_it = chromosome_info_map.begin(); bam_it != chromosome_info_map.end(); ++bam_it){
+        for (auto gtf_it = global_annotation_map_ptr.begin(); gtf_it != global_annotation_map_ptr.end(); ++gtf_it){
+            if (bam_it->first == gtf_it->first){
+                intersection_array.push_back(gtf_it);
+            }
+        }
+    }
+
+    int in_each_thread = (int) floor ((double)intersection_array.size() / fmin(threads_number, intersection_array.size()));
+    cerr << "on each thread: " << in_each_thread << endl;
+
     boost::thread_group process_threads;
-    for (int t = 0; t < threads_number; t++){
-        cerr << "Adding new thread: " << t << endl;
-        process_threads.add_thread(new boost::thread(process, start_it, stop_it, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name));
+
+    for (int t = 0; t < fmin (threads_number, intersection_array.size()); t++){
+//        cerr << "Adding new thread" << endl;
+//
+//        vector < std::map <string, multimap <long, GffRecordPtr> >::iterator >::iterator start_subvector = intersection_array.begin() + t * in_each_thread;
+//        vector < std::map <string, multimap <long, GffRecordPtr> >::iterator >::iterator stop_subvector = start_subvector;
+//        while ( stop_subvector != intersection_array.begin() + (t+1)*in_each_thread && stop_subvector != intersection_array.end()){
+//            ++stop_subvector;
+//        }
+//        if (t == fmin (threads_number, intersection_array.size()) - 1 ){
+//            stop_subvector = intersection_array.end();
+//        }
+//        vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector;
+//        chrom_vector = vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > (start_subvector, stop_subvector);
+//        process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t));
+
+            cerr << "Adding new thread: " << t <<  endl;
+            int start_subvector = t * in_each_thread;
+            int stop_subvector = start_subvector;
+            while ( stop_subvector != (t+1)*in_each_thread && stop_subvector != intersection_array.size()){
+                ++stop_subvector;
+            }
+            if (t == fmin (threads_number, intersection_array.size()) - 1 ){
+                stop_subvector = intersection_array.size();
+            }
+            vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector;
+            for (int j = start_subvector; j < stop_subvector; j++){
+                chrom_vector.push_back(intersection_array[j]);
+            }
+            for (int j = 0; j < chrom_vector.size(); j++){
+                cerr << start_subvector + j << ". " << chrom_vector[j]->first << endl;
+            }
+
+            process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t));
     }
     process_threads.join_all();
 
 
+//            vector < int > chromosome_info_map_1;
+//            chromosome_info_map_1.push_back(1);
+//            chromosome_info_map_1.push_back(2);
+//            chromosome_info_map_1.push_back(3);
+//            chromosome_info_map_1.push_back(5);
+//            chromosome_info_map_1.push_back(6);
+//            vector < int > global_annotation_map_ptr_1;
+//            global_annotation_map_ptr_1.push_back(1);
+//            global_annotation_map_ptr_1.push_back(2);
+//            global_annotation_map_ptr_1.push_back(3);
+//            vector < int > intersection_array_1;
+//            for (auto bam_it = chromosome_info_map_1.begin(); bam_it != chromosome_info_map_1.end(); ++bam_it){
+//                for (auto gtf_it = global_annotation_map_ptr_1.begin(); gtf_it != global_annotation_map_ptr_1.end(); ++gtf_it){
+//                    if (*bam_it == *gtf_it){
+//                        intersection_array_1.push_back(*gtf_it);
+//                    }
+//                }
+//            }
+//
+//            for (int i = 0; i < intersection_array_1.size(); i++)
+//                cerr << i << ". " << intersection_array_1[i] << endl;
+//
+//
+//            threads_number = 8;
+//            cerr << "threads_number: " << threads_number << endl;
 
-
-
-
+//            int in_each_thread = (int) floor ((double)intersection_array_1.size() / (double)fmin(threads_number, intersection_array_1.size()));
+//            cerr << "in_each_thread: " << in_each_thread << endl;
+//
+//
+//            for (int t = 0; t < fmin (threads_number, intersection_array_1.size()); t++){
+//                vector < int > chrom_vector_1;
+//                vector < int >::iterator start = intersection_array_1.begin() + t * in_each_thread;
+//                vector < int >::iterator stop = start;
+//                while ( stop != intersection_array_1.begin() + (t+1)*in_each_thread && stop != intersection_array_1.end())
+//                    ++stop;
+//                if (t == fmin (threads_number, intersection_array_1.size())-1 ){
+//                    cerr << "last thread" << endl;
+//                    stop = intersection_array_1.end();
+//                }
+//
+//                chrom_vector_1 = vector < int > (start, stop);
+//                cerr << "chrom_vector.size(): " << chrom_vector_1.size() << endl;
+//                    for (int k = 0; k < chrom_vector_1.size(); k++)
+//                        cerr << "   " << k << ". " << chrom_vector_1[k] << endl;
+//            }
 
 
     cerr << "Calculate rpkm" << endl;

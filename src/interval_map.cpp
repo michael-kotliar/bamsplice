@@ -6,9 +6,14 @@
 
 
 bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord previous_bam_record, interval_map<long, MapElement>::iterator & current_gtf_records_splitted_it, bool & freeze){
-    static bool allow_skip_rest;
+
+    static boost::thread_specific_ptr< bool > allow_skip_rest;
+    if( ! allow_skip_rest.get() ) {
+        allow_skip_rest.reset( new bool(false) );
+    }
+
     assert (current_bam_record.use_count() > 0);
-    if (current_bam_record->read_id == previous_bam_record.read_id and allow_skip_rest){
+    if (current_bam_record->read_id == previous_bam_record.read_id and *allow_skip_rest){
         freeze = false;
         return false;
     }
@@ -19,10 +24,10 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
 //             current_bam_record->end_pose << "]" << endl;
 //        cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
         freeze = false; // Set freeze to false to change current_bam_record
-        allow_skip_rest = true;
+        allow_skip_rest.reset (new bool(true));
         return false;
     }
-    allow_skip_rest = false;
+    allow_skip_rest.reset (new bool(false));
     if (current_bam_record->start_pose >= current_gtf_records_splitted_it->first.upper()) {
 //        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
 //        cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
@@ -34,38 +39,32 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
     return true;
 
 
-
-//    if ( current_bam_record->start_pose >= current_gtf_records_splitted_it->first.lower() &&
-//         current_bam_record->start_pose <= current_gtf_records_splitted_it->first.upper() ){
-//        allow_skip_rest = false;
-//        return true;
-//    } else if ( current_bam_record->start_pose < current_gtf_records_splitted_it->first.lower() ){
-//        cout << "   Skip read " << current_bam_record->read_id << " [" <<
-//             current_bam_record->start_pose << "," <<
-//             current_bam_record->end_pose << "]" << endl;
-//        cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
-//        freeze = false; // Set freeze to false to change current_bam_record
-//        allow_skip_rest = true;
-//        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-//            cerr << "   Skip read " << current_bam_record->read_id << " [" <<
-//                 current_bam_record->start_pose << "," <<
-//                 current_bam_record->end_pose << "]" << endl;
-//            cerr << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
-//        }
-//        return false;
-//    } else if ( current_bam_record->start_pose > current_gtf_records_splitted_it->first.upper() ){
-//        //        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
-//        cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
-//             << current_gtf_records_splitted_it->first.upper() << "]" << endl;
-//        if (current_bam_record->read_id == "A9DF6E9B-909F-CBB5-A534-DDFB5895BE2A.fastq.12378549"){
-//            cerr << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
-//                 << current_gtf_records_splitted_it->first.upper() << "]" << endl;
-//        }
-//        current_gtf_records_splitted_it++;
-//        freeze = true; // Set freeze to true to prevent changing current_bam_record
-//        allow_skip_rest = false;
+//    static bool allow_skip_rest;
+//    assert (current_bam_record.use_count() > 0);
+//    if (current_bam_record->read_id == previous_bam_record.read_id and allow_skip_rest){
+//        freeze = false;
 //        return false;
 //    }
+//
+//    if (current_bam_record->start_pose < current_gtf_records_splitted_it->first.lower()) {
+////        cout << "   Skip read " << current_bam_record->read_id << " [" <<
+////             current_bam_record->start_pose << "," <<
+////             current_bam_record->end_pose << "]" << endl;
+////        cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
+//        freeze = false; // Set freeze to false to change current_bam_record
+//        allow_skip_rest = true;
+//        return false;
+//    }
+//    allow_skip_rest = false;
+//    if (current_bam_record->start_pose >= current_gtf_records_splitted_it->first.upper()) {
+////        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
+////        cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
+////             << current_gtf_records_splitted_it->first.upper() << "]" << endl;
+//        current_gtf_records_splitted_it++;
+//        freeze = true; // Set freeze to true to prevent changing current_bam_record
+//        return false;
+//    }
+//    return true;
 
 }
 
