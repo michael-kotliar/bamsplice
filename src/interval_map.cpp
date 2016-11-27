@@ -150,7 +150,7 @@ bool fit_spliced_read_condition(const long & current_slice, const long & slice_n
 // if input_set forms linked list, for each of the element, except the first one, I can find the previous one.
 // If not - return false;
 bool form_line (const set<GffAndStartStopIt> & complete_input_set){
-    cout << "Check if set of annotation forms linked list" << endl;
+//    cout << "Check if set of annotation forms linked list" << endl;
 
     set<GffRecordPtr> input_set;
     for (auto it = complete_input_set.begin(); it != complete_input_set.end(); ++it){
@@ -164,20 +164,20 @@ bool form_line (const set<GffAndStartStopIt> & complete_input_set){
         if (it->get()->previous_gff.use_count() > 0){
             auto it_check = input_set.find(it->get()->previous_gff);
             if (it_check == input_set.end()) {
-                cout << "for element " << it->get()->exon_id << " from " << it->get()->isoform_id << " cannot find any previous" << endl;
+//                cout << "for element " << it->get()->exon_id << " from " << it->get()->isoform_id << " cannot find any previous" << endl;
                 counter++;
             } else{
                 assert (it_check->use_count() > 0);
-                cout << "for element " << it->get()->exon_id << " from " << it->get()->isoform_id
-                     << " found previous " << it_check->get()->exon_id << " from " << it_check->get()->isoform_id <<  endl;
+//                cout << "for element " << it->get()->exon_id << " from " << it->get()->isoform_id
+//                     << " found previous " << it_check->get()->exon_id << " from " << it_check->get()->isoform_id <<  endl;
             }
         } else {
-            cout << "Found first element of isoform: " << it->get()->exon_id << " from " << it->get()->isoform_id << endl;
+//            cout << "Found first element of isoform: " << it->get()->exon_id << " from " << it->get()->isoform_id << endl;
             counter++;
         }
     }
     if (counter > 1){
-        cout << "counter > 1. Impossible to have two or more unlinked elements" << endl;
+//        cout << "counter > 1. Impossible to have two or more unlinked elements" << endl;
         return false;
     }
     return true;
