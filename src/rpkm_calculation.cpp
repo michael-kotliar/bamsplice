@@ -168,8 +168,8 @@ void subtract_matrix (vector <vector <double> > & first, const vector <vector <d
 int run_cycle (vector <vector <double> > & weight_array){
     double cutoff = 10e-9; // TODO put it in separate configuration file
     int cycles = 0;
-    vector <vector <double> > tmp_matrix;
-    tmp_matrix = weight_array;
+//    vector <vector <double> > tmp_matrix;
+//    tmp_matrix = weight_array;
     // Get array of original densities sum
     vector <double> original_sum_dens =  get_sum_density_by_all_intervals (weight_array);
 
@@ -196,16 +196,16 @@ int run_cycle (vector <vector <double> > & weight_array){
 //        cout << endl;
 
         cycles++;
-//        cerr << "Cycle: " << cycles << "; ";
-        subtract_matrix(tmp_matrix, weight_array);
+        cerr << "Cycle: " << cycles << endl;
+//        subtract_matrix(tmp_matrix, weight_array);
 //        print_weight_array(tmp_matrix, "Substracted matrix");
-        double sum = sum_all (tmp_matrix);
+//        double sum = sum_all (tmp_matrix);
 //        cerr << "Sum: " << sum << endl;
-        if( sum < cutoff ){
-            break;
-        }
-
-        tmp_matrix = weight_array;
+//        if( sum < cutoff ){
+//            break;
+//        }
+//
+//        tmp_matrix = weight_array;
     }
 
     cout << "Cycles: " << cycles << endl;

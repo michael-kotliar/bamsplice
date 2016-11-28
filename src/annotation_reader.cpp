@@ -236,6 +236,11 @@ Isoform& Isoform::operator+=(const Isoform& other_iso){
         strand != other_iso.strand){
 
         cerr << "Isoform += operator error. Parameters mismatch" <<endl;
+        cerr << name << " - " <<  other_iso.name << endl;
+        cerr << name2 << " - " <<  other_iso.name2 << endl;
+        cerr << chrom << " - " <<  other_iso.chrom << endl;
+        cerr << strand << " - " <<  other_iso.strand << endl;
+
         return *this;
     }
     exon_count += other_iso.exon_count;

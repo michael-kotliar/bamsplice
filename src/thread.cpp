@@ -285,7 +285,9 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 }
                 // at the end of the iteration over the isoform map, we need to revert value of current_gtf_records_splitted_it
                 // from its backup version
-                current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it; // get iterator from the backup
+                if (slice_number > 1){ // rewind iterator back only if it was spliced read
+                    current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it; // get iterator from the backup
+                }
             }
             // set freeze to false to get new read from the bam file when calling function get_bam_record
             freeze = false;
