@@ -25,18 +25,18 @@ void print_isoform_by_name (const vector<vector<double> > & data_array,
 
 
 void print_weight_array(const vector<vector<double> > & weight_array, const string & title){
-    cerr << endl << title << endl;
-    cerr << std::setprecision(9) <<  std::fixed;
+    cout << endl << title << endl;
+    cout << std::setprecision(9) <<  std::fixed;
     for (int i = 0; i < weight_array.size(); i++) {
-        cerr << setw(4) << i << " ";
+        cout << setw(4) << i << " ";
         for (int j = 0; j < weight_array[i].size(); j++) {
             if (weight_array[i][j] == 0){
-                cerr << setw(16) << "-----";
+                cout << setw(16) << "-----";
             } else {
-                cerr << std::left << setw(16) << weight_array[i][j];
+                cout << std::left << setw(16) << weight_array[i][j];
             }
         }
-        cerr << endl;
+        cout << endl;
     }
 }
 

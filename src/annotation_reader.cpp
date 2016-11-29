@@ -310,22 +310,23 @@ void print_iso_var_map_to_file (const std::map <string, std::map <string, Isofor
     {
         for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
             output_stream << "Chromosome: " << ext_it->first << endl;
+            output_stream
+                    << "isoform" << "\t"
+                    << "gene" << "\t"
+                    << "index" << "\t"
+                    << "length" << "\t"
+                    << "total_reads" << "\t"
+                    << "density" << "\t"
+                    << "rpkm"<< endl;
             for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
                 output_stream
-                     << setw(10) << "  isoform: "
-                     << setw(15) << int_it->first
-                     << setw(10) << "gene: "
-                     << setw(15) << int_it->second.name2
-                     << setw(10) << " index: "
-                     << setw(3) << int_it->second.index
-                     << setw(10) << " length: "
-                     << setw(5) << int_it->second.length
-                     << setw(15) << " total_reads: "
-                     << setw(5) << int_it->second.total_reads
-                     << setw(10) << " density: "
-                     << setw(15) << int_it->second.density
-                     << setw(10) << " rpkm: "
-                     << setw(5) << int_it->second.rpkm << endl;
+                     << int_it->first << "\t"
+                     << int_it->second.name2 << "\t"
+                     << int_it->second.index << "\t"
+                     << int_it->second.length << "\t"
+                     << int_it->second.total_reads << "\t"
+                     << int_it->second.density << "\t"
+                     << int_it->second.rpkm << endl;
             }
         }
         output_stream.close();
