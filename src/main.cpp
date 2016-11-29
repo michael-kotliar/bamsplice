@@ -32,7 +32,7 @@ using namespace BamTools;
 int main(int argc, char **argv) {
     // Read the paths from arguments
 
-    int threads_number = 8; // TODO put it as argument
+    int threads_number = 4; // TODO put it as argument
 
     if (argc < 3){
         cerr << "Set <full path to bam-file> <full path to tab-delimited file>" << endl;
