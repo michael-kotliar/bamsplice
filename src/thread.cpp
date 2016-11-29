@@ -62,11 +62,11 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             // Making an interval map on the base of the annotation.
             // By default for each current_map_element we add one the corresponding annotation pointer
             interval_map<long, MapElement> gtf_records_splitted;
-            bool go_next = true;
             int start_count = 0;
             int stop_count = 0;
             multimap<long, GffRecordPtr>::iterator backup_start_it = current_sub_matrix_it;
-            while (go_next && current_sub_matrix_it != chrom_it->second.end()){
+            long longest_end = 0;
+            while (current_sub_matrix_it != chrom_it->second.end()){
                 assert (current_sub_matrix_it->second.use_count() > 0);
                 MapElement current_map_element;
                 current_map_element.gtf_records.push_front(current_sub_matrix_it->second);
@@ -74,13 +74,25 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 gtf_records_splitted.add(make_pair(interval<long>::right_open(current_sub_matrix_it->second->start_pose, current_sub_matrix_it->second->end_pose), current_map_element));
                 if (current_sub_matrix_it->second->start_exon){
                     start_count++;
+//                    cout << "Noticed start for " << current_sub_matrix_it->second->isoform_id << endl;
                 }
                 if (current_sub_matrix_it->second->stop_exon){
                     stop_count++;
+//                    cout << "Noticed end for " << current_sub_matrix_it->second->isoform_id << endl;
+                    longest_end = fmax (current_sub_matrix_it->second->end_pose, longest_end);
+//                    cout << "Longest end: " << longest_end << endl;
                 }
                 current_sub_matrix_it++;
                 if (start_count == stop_count){
-                    break;
+//                    cout << "Closed start/stop pairs" << endl;
+                    // double check if the end of the last exon overlay with the beginning of the next exon of the following isoform
+                    if (current_sub_matrix_it != chrom_it->second.end()){
+                        if (longest_end < current_sub_matrix_it->second->start_pose){
+//                            cout << "longest < next start pose; stop" << endl;
+                            break;
+                        }
+//                        cout << "longest > next start pose; continue" << endl;
+                    }
                 }
             }
             // create an empty matrix: column - one interval from interval map, row - isoforms, initialize it with 0
