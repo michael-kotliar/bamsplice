@@ -37,10 +37,12 @@ public:
     vector < BamRecordPtr > bam_records; // array of pointers to all of the reads, which belongs to this exon. Need this for debug, than we can delete this field
     int reads_count; // total number of reads, which belongs to this exon
     bool strand; // true for +
+    bool start_exon;
+    bool stop_exon;
     GffRecordPtr previous_gff; // ptr to the previous annotation in the same isoform. In NULL - first annotation in current isoform
 
     // CONSTRUCTOR WITH PARAMETERS
-    GffRecord (long start, long end, string exon, string isoform, GffRecordPtr pre_gff, bool strnd)
+    GffRecord (long start, long end, string exon, string isoform, GffRecordPtr pre_gff, bool strnd, bool start_ex = false, bool stop_ex = false)
             : start_pose (start)
             , end_pose (end)
             , exon_id (exon)
@@ -48,6 +50,8 @@ public:
             , previous_gff (pre_gff)
             , reads_count (0)
             , strand (strnd)
+            , start_exon (start_ex)
+            , stop_exon (stop_ex)
     {}
 
     // EMPTY CONSTRUCTOR
@@ -59,6 +63,8 @@ public:
             , previous_gff (NULL)
             , reads_count (0)
             , strand (false)
+            , start_exon (false)
+            , stop_exon (false)
     {}
 
 };
@@ -79,9 +85,9 @@ public:
     double density; // total_reads/length
     double rpkm; // rpkm
     int index; // index that will be used in weigth array to save reads there
-    vector <long> exon_starts; // not necessary to be sorted // 9
-    vector <long> exon_ends; // saves pointers to ends of the exons. not necessary to be sorted // 10
-    vector <long> exon_frames; // pointers to exon frames, not necessary to be sorted // 15
+    set <long> exon_starts;
+    set <long> exon_ends;
+//    set <long> exon_frames; // pointers to exon frames, not necessary to be sorted // 15
 
     double score; //11
     string name2; // 12

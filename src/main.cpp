@@ -116,16 +116,18 @@ int main(int argc, char **argv) {
 //    cout << endl;
 
 //     FOR DEBUG USE ONLY
-//        cout << "ANNOTATIONS" << endl;
+//        cout << endl << "ANNOTATIONS" << endl;
 //        for (auto chrom_it = global_annotation_map_ptr.begin(); chrom_it != global_annotation_map_ptr.end(); ++chrom_it){
-//            cout << "Chromosome: " << chrom_it->first << endl;
+//            cerr << "Chromosome: " << chrom_it->first << endl;
 //            for (auto start_it = chrom_it->second.begin(); start_it!=chrom_it->second.end(); ++start_it){
 //                assert (start_it->second.use_count() > 0);
-//                cout << " exon: [" << start_it->second->exon_id << "]"
-//                     << " isoform: [" << start_it->second->isoform_id << "]"
+//                cerr << " isoform: [" << start_it->second->isoform_id << "]"
+//                     << " exon: [" << start_it->second->exon_id << "]"
 //                     << " start/stop: [" << start_it->second->start_pose << "," << start_it->second->end_pose << "]"
 //                     << " strand: [" << start_it->second->strand << "]"
-//                     << " readscount: [" << start_it->second->reads_count << "]";
+//                     << " readscount: [" << start_it->second->reads_count << "]"
+//                     << " start_exon: [" << start_it->second->start_exon << "]"
+//                     << " stop_exon: [" << start_it->second->stop_exon << "]" << endl;
 //                if (start_it->second->previous_gff.use_count() > 0){
 //                    cout << " previous gtf: [" << start_it->second->previous_gff.get()->exon_id <<", " << start_it->second->previous_gff.get()->isoform_id << "]";
 //                } else {

@@ -43,30 +43,37 @@ void rearrange_array_from_gtf (vector<string> & input){
 
 
 void Isoform::print (){
-    cout << "bin: " << bin << endl;
-    cout << "isoform: " << name << endl;
-    cout << "chrom: " << chrom << endl;
-    cout << "name: " << name << endl;
-    cout << "strand: " << strand << endl;
-    cout << "[tx_start, tx_end]: [" << tx_start << ", " << tx_end << "]" << endl;
-    cout << "[cds_start, cds_end]: [" << cds_start << ", " << cds_end << "]" << endl;
-    cout << "exon_count: " << exon_count << endl;
-    cout << "length: " << length << endl;
-    cout << "total_reads: " << total_reads << endl;
-    cout << "density: " << density << endl;
-    cout << "rpkm: " << rpkm << endl;
-    cout << "index: " << index << endl;
-    cout << "exon_starts.size(): " << exon_starts.size() << endl;
-    cout << "exon_ends.size(): " << exon_ends.size() << endl;
-    cout << "exon_frames.size(): " << exon_frames.size() << endl;
-    cout << "Exons:" << endl;
-    for (int i = 0; i < exon_count; i++){
-        cout << "  " << i << ") " << "[" << exon_starts[i] << ", "<< exon_ends[i] << "] - " << exon_frames[i] << endl;
+    cerr << "bin: " << bin << endl;
+    cerr << "isoform: " << name << endl;
+    cerr << "chrom: " << chrom << endl;
+    cerr << "name: " << name << endl;
+    cerr << "strand: " << strand << endl;
+    cerr << "[tx_start, tx_end]: [" << tx_start << ", " << tx_end << "]" << endl;
+    cerr << "[cds_start, cds_end]: [" << cds_start << ", " << cds_end << "]" << endl;
+    cerr << "exon_count: " << exon_count << endl;
+    cerr << "length: " << length << endl;
+    cerr << "total_reads: " << total_reads << endl;
+    cerr << "density: " << density << endl;
+    cerr << "rpkm: " << rpkm << endl;
+    cerr << "index: " << index << endl;
+    cerr << "exon_starts.size(): " << exon_starts.size() << endl;
+    cerr << "exon_ends.size(): " << exon_ends.size() << endl;
+//    cout << "exon_frames.size(): " << exon_frames.size() << endl;
+    cerr << "Exons starts:" << endl;
+    for (auto it = exon_starts.begin(); it != exon_starts.end(); ++it){
+        cerr << *it << endl;
     }
-    cout << "score: " << score << endl;
-    cout << "name2: " << name2 << endl;
-    cout << "cds_start_stat: " << cds_start_stat << endl;
-    cout << "cds_end_stat: " << cds_end_stat << endl;
+    cerr << "Exons ends:" << endl;
+    for (auto it = exon_ends.begin(); it != exon_ends.end(); ++it){
+        cerr << *it << endl;
+    }
+//    for (int i = 0; i < exon_count; i++){
+//        cout << "  " << i << ") " << "[" << exon_starts[i] << ", "<< exon_ends[i] << "] - " << endl;
+//    }
+    cerr << "score: " << score << endl;
+    cerr << "name2: " << name2 << endl;
+    cerr << "cds_start_stat: " << cds_start_stat << endl;
+    cerr << "cds_end_stat: " << cds_end_stat << endl;
 }
 
 
@@ -180,28 +187,34 @@ Isoform::Isoform (string line, bool gtf):
     //        print_vector(exon_frames_str, "exon_frames_str");
 
 
-    if (not str_array_to_long_array(exon_starts_str, exon_starts)){
+    if (not str_array_to_set(exon_starts_str, exon_starts)){
         throw ("Isoform class constructor fail");
     };
 
-    if (not str_array_to_long_array(exon_ends_str, exon_ends)){
+    if (not str_array_to_set(exon_ends_str, exon_ends)){
         throw ("Isoform class constructor fail");
     };
 
-    if (not str_array_to_long_array(exon_frames_str, exon_frames)){
-        throw ("Isoform class constructor fail");
-    };
+//    if (not str_array_to_long_array(exon_frames_str, exon_frames)){
+//        throw ("Isoform class constructor fail");
+//    };
 
     if (gtf){// update coordinates if GTF TODO double check if it's correct to do like this
-        for (int k = 0; k < exon_starts.size(); k++){
-            exon_starts[k]--;
+        set <long> exon_starts_new;
+        for (auto it = exon_starts.begin(); it != exon_starts.end(); ++it){
+            exon_starts_new.insert (*it-1);
         }
+        exon_starts = exon_starts_new;
     }
 
-
+    set <long>::iterator start_it = exon_starts.begin();
+    set <long>::iterator stop_it = exon_ends.begin();
     // calculating the length of isoform as sum of all exons' lengths
     for (int i = 0; i < exon_count; i++){
-        length += (long)(exon_ends[i] - exon_starts[i]);
+        assert (exon_starts.size() == exon_count && exon_ends.size() == exon_count);
+        length += (long)((*stop_it) - (*start_it));
+        start_it++;
+        stop_it++;
     }
 
 }
@@ -245,9 +258,9 @@ Isoform& Isoform::operator+=(const Isoform& other_iso){
     }
     exon_count += other_iso.exon_count;
     length += other_iso.length;
-    exon_starts.insert(exon_starts.end(), other_iso.exon_starts.begin(), other_iso.exon_starts.end());
-    exon_ends.insert(exon_ends.end(), other_iso.exon_ends.begin(), other_iso.exon_ends.end());
-    exon_frames.insert(exon_frames.end(), other_iso.exon_frames.begin(), other_iso.exon_frames.end());
+    exon_starts.insert(other_iso.exon_starts.begin(), other_iso.exon_starts.end());
+    exon_ends.insert(other_iso.exon_ends.begin(), other_iso.exon_ends.end());
+//    exon_frames.insert(exon_frames.end(), other_iso.exon_frames.begin(), other_iso.exon_frames.end());
     return *this;
 }
 
@@ -357,7 +370,7 @@ bool load_annotation (const string & full_path_name,
             continue;
         }
 
-        current_isoform.index = iso_var_map[current_isoform.chrom].size()+1;
+        current_isoform.index = (int)iso_var_map[current_isoform.chrom].size()+1;
         pair <string, Isoform> internal_pair_for_iso_var_map (current_isoform.name, current_isoform);
         std::map <string, Isoform> internal_iso_var_map;
         internal_iso_var_map.insert(internal_pair_for_iso_var_map);
@@ -365,30 +378,47 @@ bool load_annotation (const string & full_path_name,
         pair <std::map <string, std::map <string, Isoform> >::iterator, bool> res;
         pair <string, std::map <string, Isoform> > external_pair_for_iso_var_map (current_isoform.chrom, internal_iso_var_map);
         res = iso_var_map.insert (external_pair_for_iso_var_map);
-        if (res.second == false){
+        if ( !res.second ){
             pair <std::map <string, Isoform>::iterator, bool> insert_iso_res;
             insert_iso_res = res.first->second.insert(internal_pair_for_iso_var_map);
-            if (insert_iso_res.second == false){
+            if ( !insert_iso_res.second ){
                 // we already have this isoform in our map std::map <string, Isoform>
                 insert_iso_res.first->second += current_isoform;
             }
         }
     }
 
+//
+//    for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
+//        cerr << "Chromosome: " << ext_it->first << endl;
+//        for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
+//            cout << setw(10) << "  isoform: " << setw(15) << int_it->first << endl;
+//            int_it->second.print();
+//        }
+//    }
+
+
+
+
     GffRecordPtr previous_annotation;
     previous_annotation.reset();
 
     for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
-        cout << "Chromosome: " << ext_it->first << endl;
         for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
+            set <long>::iterator start_it = int_it->second.exon_starts.begin();
+            set <long>::iterator stop_it = int_it->second.exon_ends.begin();
             for (int i = 0; i < int_it->second.exon_count; i++){
                 stringstream ss;
                 ss << i+1;
                 string exon_id = ss.str();
+                bool start_ex = false;
+                bool stop_ex = false;
+                if (i == 0) start_ex = true;
+                if (i == int_it->second.exon_count-1) stop_ex = true;
 
-                GffRecordPtr current_gff (new GffRecord (int_it->second.exon_starts[i], int_it->second.exon_ends[i], exon_id, int_it->second.name, previous_annotation, int_it->second.strand) );
+                GffRecordPtr current_gff (new GffRecord (*start_it, *stop_it, exon_id, int_it->second.name, previous_annotation, int_it->second.strand, start_ex, stop_ex) );
                 previous_annotation = current_gff;
-                pair <long, GffRecordPtr> internal_pair (int_it->second.exon_starts[i], current_gff);
+                pair <long, GffRecordPtr> internal_pair (*start_it, current_gff);
                 multimap <long, GffRecordPtr> internal_multimap;
                 internal_multimap.insert (internal_pair);
                 pair <std::map <string, multimap <long, GffRecordPtr> >::iterator, bool> ret;
@@ -397,13 +427,16 @@ bool load_annotation (const string & full_path_name,
                 if (ret.second == false) {
                     ret.first->second.insert (internal_pair);
                 }
+                start_it++;
+                stop_it++;
             }
             // clear exon_starts, exon_ends, exon_frames from iso_map, because we have all that data in global_annotation_map_ptr
             int_it->second.exon_starts.clear();
             int_it->second.exon_ends.clear();
-            int_it->second.exon_frames.clear();
+//            int_it->second.exon_frames.clear();
         }
     }
+
 
     return true;
 }

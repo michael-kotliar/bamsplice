@@ -145,6 +145,21 @@ namespace string_tools {
         return true;
     }
 
+    inline bool str_array_to_set(const vector<string> &input, set<long> &output){
+        for (int i = 0; i < input.size(); i++){
+            long temp;
+            try {
+                temp = boost::lexical_cast<long>(input[i]);
+            }
+            catch(...){
+                cout << "Bad lexical cast of " << input[i] << " as long" << endl;
+                return false;
+            }
+            output.insert(temp);
+        }
+        return true;
+    }
+
     inline void print_vector (const vector <string> & in, string title = ""){
         cout << title << endl;
         for (int i = 0; i < in.size(); i++){

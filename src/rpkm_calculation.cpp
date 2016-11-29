@@ -25,18 +25,18 @@ void print_isoform_by_name (const vector<vector<double> > & data_array,
 
 
 void print_weight_array(const vector<vector<double> > & weight_array, const string & title){
-    cout << endl << title << endl;
-    cout << std::setprecision(9) <<  std::fixed;
+    cerr << endl << title << endl;
+    cerr << std::setprecision(9) <<  std::fixed;
     for (int i = 0; i < weight_array.size(); i++) {
-        cout <<  setw(4) << i;
+        cerr << setw(4) << i << " ";
         for (int j = 0; j < weight_array[i].size(); j++) {
             if (weight_array[i][j] == 0){
-                cout << setw(16) << "-----";
+                cerr << setw(16) << "-----";
             } else {
-                cout << std::left << setw(16) << weight_array[i][j];
+                cerr << std::left << setw(16) << weight_array[i][j];
             }
         }
-        cout << endl;
+        cerr << endl;
     }
 }
 
@@ -168,8 +168,8 @@ void subtract_matrix (vector <vector <double> > & first, const vector <vector <d
 int run_cycle (vector <vector <double> > & weight_array){
     double cutoff = 10e-9; // TODO put it in separate configuration file
     int cycles = 0;
-//    vector <vector <double> > tmp_matrix;
-//    tmp_matrix = weight_array;
+    vector <vector <double> > tmp_matrix;
+    tmp_matrix = weight_array;
     // Get array of original densities sum
     vector <double> original_sum_dens =  get_sum_density_by_all_intervals (weight_array);
 
@@ -196,16 +196,16 @@ int run_cycle (vector <vector <double> > & weight_array){
 //        cout << endl;
 
         cycles++;
-        cerr << "Cycle: " << cycles << endl;
-//        subtract_matrix(tmp_matrix, weight_array);
+//        cerr << "Cycle: " << cycles;
+        subtract_matrix(tmp_matrix, weight_array);
 //        print_weight_array(tmp_matrix, "Substracted matrix");
-//        double sum = sum_all (tmp_matrix);
-//        cerr << "Sum: " << sum << endl;
-//        if( sum < cutoff ){
-//            break;
-//        }
+        double sum = sum_all (tmp_matrix);
+//        cerr << " Sum: " << sum << endl;
+        if( sum < cutoff ){
+            break;
+        }
 //
-//        tmp_matrix = weight_array;
+        tmp_matrix = weight_array;
     }
 
     cout << "Cycles: " << cycles << endl;
@@ -224,19 +224,36 @@ void print_array (const vector <double> & intput_array, const string & title, st
 }
 
 
-void calculate_totReads_density (const vector<vector<double> > & weight_array, std::map <string, Isoform> & iso_map){
+void calculate_totReads_density (const vector<vector<double> > & weight_array, std::map <string, Isoform> & iso_map,  const std::map <string, int> & correspondence_map){
     boost::mutex::scoped_lock scoped_lock(iso_var_map_mutex);
-    for (auto iso_it = iso_map.begin(); iso_it != iso_map.end(); ++iso_it) {
-        int index = iso_it->second.index;
-        for (int j = 0; j < weight_array[index].size(); j++) {
-            if (weight_array[index][j] != 0){
-                iso_it->second.density += weight_array[index][j] * weight_array[0][j];
+//    for (auto iso_it = iso_map.begin(); iso_it != iso_map.end(); ++iso_it) {
+//        int index = iso_it->second.index;
+//        for (int j = 0; j < weight_array[index].size(); j++) {
+//            if (weight_array[index][j] != 0){
+//                iso_it->second.density += weight_array[index][j] * weight_array[0][j];
+//            }
+//        }
+//        iso_it->second.total_reads = (int)iso_it->second.density;
+//        iso_it->second.density = 1000 * iso_it->second.total_reads / (double)iso_it->second.length;
+//    }
+
+        for (auto corr_map_it = correspondence_map.begin(); corr_map_it != correspondence_map.end(); ++corr_map_it) {
+            double density = 0;
+            double total_reads = 0;
+            for (int j = 0; j < weight_array[corr_map_it->second].size(); j++){
+                density += weight_array[corr_map_it->second][j] * weight_array[0][j];
             }
+            total_reads = (int)density;
+
+            iso_map[corr_map_it->first].total_reads = total_reads;
+            iso_map[corr_map_it->first].density = 1000 * total_reads / (double) iso_map[corr_map_it->first].length;;
+
         }
-        iso_it->second.total_reads = (int)iso_it->second.density;
-        iso_it->second.density = 1000 * iso_it->second.total_reads / (double)iso_it->second.length;
-    }
+
 }
+
+
+
 
 void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map, const long & aligned) {
     for (auto chrom_it = iso_var_map.begin(); chrom_it != iso_var_map.end(); ++chrom_it) {
