@@ -19,19 +19,12 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
     }
 
     if (current_bam_record->start_pose < current_gtf_records_splitted_it->first.lower()) {
-//        cout << "   Skip read " << current_bam_record->read_id << " [" <<
-//             current_bam_record->start_pose << "," <<
-//             current_bam_record->end_pose << "]" << endl;
-//        cout << "     " << current_bam_record->start_pose << " < " << current_gtf_records_splitted_it->first.lower() << endl;
         freeze = false; // Set freeze to false to change current_bam_record
         allow_skip_rest.reset (new bool(true));
         return false;
     }
     allow_skip_rest.reset (new bool(false));
     if (current_bam_record->start_pose >= current_gtf_records_splitted_it->first.upper()) {
-//        cout << current_bam_record->start_pose << " > " << current_gtf_records_splitted_it->first.upper() << endl;
-//        cout << "   Skip segment annotation : " << "[" <<  current_gtf_records_splitted_it->first.lower() << ","
-//             << current_gtf_records_splitted_it->first.upper() << "]" << endl;
         current_gtf_records_splitted_it++;
         freeze = true; // Set freeze to true to prevent changing current_bam_record
         return false;

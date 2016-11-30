@@ -26,8 +26,11 @@ using namespace std;
 using namespace BamTools;
 using namespace boost::posix_time;
 
+
+
 class BamRecord;
 typedef boost::shared_ptr<BamRecord> BamRecordPtr;
+static boost::thread_specific_ptr< list <BamRecordPtr> > saved_reads_tls;
 
 struct BamGeneralInfo {
     long total;
@@ -85,6 +88,8 @@ public:
 list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment);
 
 bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze = false);
+void put_bam_record_back (BamRecordPtr bam_record);
+void reset_saved_reads ();
 
 void print_ref_info (const std::map <string, pair <int, int> > & info_map);
 
@@ -94,6 +99,7 @@ bool make_index (BamReader & bam_reader);
 bool flag_check (const BamAlignment & al, BamGeneralInfo & bam_general_info);
 bool flag_check (const BamAlignment & al);
 void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info);
+
 
 
 

@@ -15,6 +15,7 @@ void BamRecord::print (){
     cout << "number of parts: " << slices << endl;
 };
 
+//static boost::thread_specific_ptr< list <BamRecordPtr> > saved_reads_tls;
 
 list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment){
     // Parse CIGAR
@@ -85,14 +86,26 @@ bool flag_check (const BamAlignment & al){
 }
 
 
-// Gets the new read fro the BAM file through BamReader object
-bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze){
 
-    static boost::thread_specific_ptr< list <BamRecordPtr> > saved_reads_tls;
+void put_bam_record_back (BamRecordPtr bam_record){
     if( ! saved_reads_tls.get() ) {
         saved_reads_tls.reset( new list <BamRecordPtr> );
     }
+    saved_reads_tls->push_back(bam_record);
+    cout << "Pushed back read: " << bam_record->read_id << endl;
+}
 
+void reset_saved_reads (){
+    cout << "reset_saved_reads" << endl;
+    saved_reads_tls.reset( new list <BamRecordPtr> );
+}
+
+// Gets the new read fro the BAM file through BamReader object
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze){
+
+    if( ! saved_reads_tls.get() ) {
+        saved_reads_tls.reset( new list <BamRecordPtr> );
+    }
     if (freeze and bam_record){
         return true;
     }

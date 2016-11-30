@@ -133,19 +133,10 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
             cerr << "[" << thread_number << "] " << "Processing reads" << endl;
-            int reads_tem_count = 0;
             while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
-                reads_tem_count++;
-                if (reads_tem_count % 1000 == 0) {
-                    cerr << "*";
-                }
-                if (reads_tem_count > 6000) {
-                    cerr << "\r";
-                    reads_tem_count = 0;
-                }
                 // Check if gtf records array is already empty. Break the while loop
                 if (current_gtf_records_splitted_it == gtf_records_splitted.end()) {
-                    cerr << endl << "[" << thread_number << "] " << "reached the end of interval map" << endl;
+                    cout << endl << "[" << thread_number << "] " << "reached the end of interval map first" << endl;
                     break;
                 }
 
@@ -181,8 +172,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
                 // Find start segment annotation
                 // If false call get_bam_record again. freeze is true if we need to skip the read and false if we want to skip annotation
-                if (not find_start_segment_annotation(current_bam_record, previous_bam_record,
-                                                      current_gtf_records_splitted_it, freeze)) {
+                if (not find_start_segment_annotation(current_bam_record, previous_bam_record, current_gtf_records_splitted_it, freeze)) {
                     previous_bam_record = *current_bam_record; // update previous_bam_record with current value
                     if (current_gtf_records_splitted_it == gtf_records_splitted.end()) {
                         if (current_bam_record->slices > 1 && current_slice > 1) {
@@ -192,6 +182,13 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                             continue;
                         } else {
                             cerr << endl << "[" << thread_number << "] " << "reached the end of interval map" << endl;
+                            // need to put last read back, because it could be from the next submatrix and we don't want to loose it.
+                            // If it was part of the spliced read - don't care, skip it
+                            if (current_bam_record->slices == 1){
+                                put_bam_record_back (current_bam_record);
+                            } else {
+                                reset_saved_reads();
+                            }
                             break;
                         }
                     }
