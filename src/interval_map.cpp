@@ -74,7 +74,7 @@ bool find_stop_segment_annotation (BamRecordPtr current_bam_record,
                                    bool & freeze){
     assert (current_bam_record.use_count() > 0);
     while (true){
-        if ( current_bam_record->end_pose >= temp_gtf_records_splitted_it->first.lower() &&
+        if ( current_bam_record->end_pose > temp_gtf_records_splitted_it->first.lower() &&
              current_bam_record->end_pose <= temp_gtf_records_splitted_it->first.upper() ){
             return true;
         } else if (temp_gtf_records_splitted_it == max_segment_annotation){
@@ -83,7 +83,7 @@ bool find_stop_segment_annotation (BamRecordPtr current_bam_record,
         } else {
             temp_gtf_records_splitted_it++;
         }
-        if (current_bam_record->end_pose < temp_gtf_records_splitted_it->first.lower()){
+        if (current_bam_record->end_pose <= temp_gtf_records_splitted_it->first.lower()){
             freeze = false;
             return false;
         }

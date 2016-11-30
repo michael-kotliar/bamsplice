@@ -86,7 +86,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 //                    cerr << "Closed start/stop pairs" << endl;
                     // double check if the end of the last exon overlay with the beginning of the next exon of the following isoform
                     if (current_sub_matrix_it != chrom_it->second.end()){
-                        if (longest_end < current_sub_matrix_it->second->start_pose){
+                        if (longest_end <= current_sub_matrix_it->second->start_pose){ // should be <=
 //                            cerr << "longest < next start pose; stop" << endl;
                             break;
                         }
