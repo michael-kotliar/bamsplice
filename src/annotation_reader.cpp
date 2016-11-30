@@ -96,6 +96,8 @@ Isoform::Isoform (string line, bool gtf):
         ,name2("")
         ,cds_start_stat (cds_stat::none)
         ,cds_end_stat (cds_stat::none)
+        ,cycles(0)
+        ,bin_id (".")
 {
 
     vector<string> line_splitted = split_line(line);
@@ -238,9 +240,11 @@ Isoform::Isoform ():
         ,name2("")
         ,cds_start_stat (cds_stat::none)
         ,cds_end_stat (cds_stat::none)
+        ,cycles (0)
+        ,bin_id (".")
 {
 
-}
+};
 
 Isoform& Isoform::operator+=(const Isoform& other_iso){
     if (name  != other_iso.name  ||
@@ -308,25 +312,30 @@ void print_iso_var_map_to_file (const std::map <string, std::map <string, Isofor
     ofstream output_stream (path);
     if (output_stream.is_open())
     {
+        output_stream // header line
+                << "isoform" << "\t"
+                << "chrom" << "\t"
+                << "gene" << "\t"
+                << "index" << "\t"
+                << "length" << "\t"
+                << "total_reads" << "\t"
+                << "density" << "\t"
+                << "rpkm"<< "\t"
+                << "cycles" << "\t"
+                << "bin_id" << endl;
         for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
-            output_stream << "Chromosome: " << ext_it->first << endl;
-            output_stream
-                    << "isoform" << "\t"
-                    << "gene" << "\t"
-                    << "index" << "\t"
-                    << "length" << "\t"
-                    << "total_reads" << "\t"
-                    << "density" << "\t"
-                    << "rpkm"<< endl;
             for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
                 output_stream
                      << int_it->first << "\t"
+                     << ext_it->first << "\t"
                      << int_it->second.name2 << "\t"
                      << int_it->second.index << "\t"
                      << int_it->second.length << "\t"
                      << int_it->second.total_reads << "\t"
                      << int_it->second.density << "\t"
-                     << int_it->second.rpkm << endl;
+                     << int_it->second.rpkm << "\t"
+                     << int_it->second.cycles << "\t"
+                     << int_it->second.bin_id << endl;
             }
         }
         output_stream.close();

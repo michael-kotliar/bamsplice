@@ -56,9 +56,9 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
 
         multimap<long, GffRecordPtr>::iterator current_sub_matrix_it = chrom_it->second.begin();
-
+        int bin = 0;
         while (current_sub_matrix_it != chrom_it->second.end()) {
-
+            bin++;
             // Making an interval map on the base of the annotation.
             // By default for each current_map_element we add one the corresponding annotation pointer
             interval_map<long, MapElement> gtf_records_splitted;
@@ -353,7 +353,9 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             cerr << "[" << thread_number << "] " << "Finished to run cycles : " << cycles << endl;
             print_weight_array(weight_array, "Final density array");
             cout << endl;
-            calculate_totReads_density(weight_array, iso_var_map[chrom], correspondence_map);
+            stringstream ss;
+            ss << thread_number << "." << bin;
+            calculate_totReads_density(weight_array, iso_var_map[chrom], correspondence_map, cycles, ss.str());
             cout << endl << endl;
         }
     }

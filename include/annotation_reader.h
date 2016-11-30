@@ -84,6 +84,8 @@ public:
     int total_reads; // total number of reads in isoform
     double density; // total_reads/length
     double rpkm; // rpkm
+    int cycles; // number of iterations to balance the table
+    string bin_id; // id to be able to find out which isoform have been processed in the same matrix
     int index; // index that will be used in weigth array to save reads there
     set <long> exon_starts;
     set <long> exon_ends;

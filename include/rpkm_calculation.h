@@ -37,5 +37,6 @@ void adjust_isoforms_density_by_coef (vector <vector <double> > & weight_array, 
 int run_cycle (vector <vector <double> > & weight_array);
 double sum_all (const vector <vector <double> > dens_matrix);
 void subtract_matrix (vector <vector <double> > & first, const vector <vector <double> > & second);
-void calculate_totReads_density (const vector<vector<double> > & weight_array, std::map <string, Isoform> & iso_map, const std::map <string, int> & correspondence_map);
+void calculate_totReads_density (const vector<vector<double> > & weight_array, std::map <string, Isoform> & iso_map,
+                                 const std::map <string, int> & correspondence_map, int cycles = 0, string bin_id = ".");
 void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map, const long & aligned);
