@@ -330,6 +330,7 @@ void print_iso_var_map_to_file (const std::map <string, std::map <string, Isofor
             }
         }
         output_stream.close();
+        cerr << "Results are successfully exported to " << path << endl;
     }
     else cout << "Unable to open output file: " << path << endl;
 }
