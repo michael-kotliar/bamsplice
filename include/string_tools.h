@@ -93,7 +93,7 @@ namespace string_tools {
     }
 
     inline bool str_to_double(double &var, const string &value){
-        int temp;
+        double temp;
         try {
             temp = boost::lexical_cast<double>(value);
         }
