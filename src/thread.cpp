@@ -354,7 +354,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             print_weight_array(weight_array, "Final density array");
             cout << endl;
             stringstream ss;
-            ss << thread_number << "." << bin;
+            ss << thread_number << "." << k << "." << bin;
             calculate_totReads_density(weight_array, iso_var_map[chrom], correspondence_map, cycles, ss.str());
             cout << endl << endl;
         }

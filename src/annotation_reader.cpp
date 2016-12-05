@@ -313,6 +313,7 @@ void print_iso_var_map_to_file (const std::map <string, std::map <string, Isofor
     if (output_stream.is_open())
     {
         output_stream // header line
+                << "#"
                 << "isoform" << "\t"
                 << "chrom" << "\t"
                 << "gene" << "\t"
