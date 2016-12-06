@@ -364,21 +364,21 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
 
             // Original weight array
-            print_weight_array(weight_array, "Original weight array");
+            print_weight_array(weight_array, correspondence_map, "Original weight array");
 
 //        cout << "DEBUG NM_001198798" << endl;
 //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
 
             // Transormed to density
             transform_to_density(weight_array);
-            print_weight_array(weight_array, "Original density array");
+            print_weight_array(weight_array, correspondence_map, "Original density array");
 
             //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
 
             cerr << "[" << thread_number << "] " << "Started to run cycles" << endl;
             int cycles = run_cycle(weight_array);
             cerr << "[" << thread_number << "] " << "Finished to run cycles : " << cycles << endl;
-            print_weight_array(weight_array, "Final density array");
+            print_weight_array(weight_array, correspondence_map, "Final density array");
             cout << endl;
             stringstream ss;
             ss << thread_number << "." << k << "." << bin;

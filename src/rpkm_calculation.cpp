@@ -24,11 +24,18 @@ void print_isoform_by_name (const vector<vector<double> > & data_array,
 
 
 
-void print_weight_array(const vector<vector<double> > & weight_array, const string & title){
+void print_weight_array(const vector<vector<double> > & weight_array, const std::map <string, int> & correspondence_map, const string & title){
+    std::map <int, string> index_name_map;
+    index_name_map[0] = "Length";
+    for (auto it = correspondence_map.begin(); it != correspondence_map.end(); ++it){
+        pair <std::map <int, string>::iterator, bool> res_ins = index_name_map.insert (pair <int, string> (it->second, it->first));
+        assert (res_ins.second && "Find a bug in correspondence_map");
+    }
+
     cout << endl << title << endl;
     cout << std::setprecision(9) <<  std::fixed;
     for (int i = 0; i < weight_array.size(); i++) {
-        cout << setw(4) << i << " ";
+        cout << setw(15) << std::left << index_name_map.find(i)->second << " ";
         for (int j = 0; j < weight_array[i].size(); j++) {
             if (weight_array[i][j] == 0){
                 cout << setw(16) << "-----";
