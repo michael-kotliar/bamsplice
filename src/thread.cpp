@@ -3,6 +3,25 @@
 //
 #include "thread.h"
 
+void filter_weight_array (  vector<vector<double> > & weight_array,
+                            const interval_map<long, MapElement> & gtf_records_splitted,
+                            const std::map <string, int> & correspondence_map,
+                            double min_weight)
+{
+    int temp_n = 0;
+    for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
+//        double length = temp_it->first.upper() - temp_it->first.lower();
+        for (auto gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it) {
+            GffRecordPtr temp_gtf_ptr = *gtf_it;
+            int index = correspondence_map.find(temp_gtf_ptr->isoform_id)->second;
+            if (weight_array[index][temp_n] == min_weight && (temp_gtf_ptr->start_exon || temp_gtf_ptr->stop_exon) ){
+                weight_array[index][temp_n] = 0;
+            }
+        }
+        temp_n++;
+    }
+}
+
 
 void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector,
                  std::map <string, pair <int, int> > chromosome_info_map,
@@ -108,8 +127,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 weight_array[0][temp_n] = length;
                 for (auto gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it) {
                     GffRecordPtr temp_gtf_ptr = *gtf_it;
-                    pair <std::map <string, int>::iterator, bool> res = correspondence_map.insert (pair <string, int> (iso_var_map[chrom][temp_gtf_ptr->isoform_id].name, correspondence_map.size()+1) );
-//                    cerr << "INDEX: " << res.first->second << " " <<res.first->first<< endl;
+                    pair <std::map <string, int>::iterator, bool> res = correspondence_map.insert (pair <string, int> (temp_gtf_ptr->isoform_id, correspondence_map.size()+1) ); // TODO can be simplified. get temp_gtf_ptr->isoform_id
                     weight_array[res.first->second][temp_n] = min_weight;
                 }
                 temp_n++;
@@ -327,6 +345,10 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 // set freeze to false to get new read from the bam file when calling function get_bam_record
                 freeze = false;
             }
+
+
+            filter_weight_array (weight_array, gtf_records_splitted, correspondence_map, min_weight);
+
 
             if (test_mode) {
                 stringstream ss;
