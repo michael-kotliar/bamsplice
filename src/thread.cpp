@@ -127,10 +127,15 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 weight_array[0][temp_n] = length;
                 for (auto gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it) {
                     GffRecordPtr temp_gtf_ptr = *gtf_it;
-                    pair <std::map <string, int>::iterator, bool> res = correspondence_map.insert (pair <string, int> (temp_gtf_ptr->isoform_id, correspondence_map.size()+1) ); // TODO can be simplified. get temp_gtf_ptr->isoform_id
+                    pair <std::map <string, int>::iterator, bool> res = correspondence_map.insert (pair <string, int> (temp_gtf_ptr->isoform_id, correspondence_map.size()+1) );
                     weight_array[res.first->second][temp_n] = min_weight;
                 }
                 temp_n++;
+            }
+
+            cout << endl << "Isoform name - weight_array index correspondence map" << endl;
+            for (auto it = correspondence_map.begin(); it != correspondence_map.end(); ++it){
+                cout << it->first << " : " << it->second << endl;
             }
 
 //            // FOR DEBUG ONLY

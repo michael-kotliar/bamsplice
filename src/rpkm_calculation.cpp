@@ -239,6 +239,7 @@ void calculate_totReads_density (const vector<vector<double> > & weight_array, s
         iso_map[corr_map_it->first].density = 1000 * total_reads / (double) iso_map[corr_map_it->first].length;
         iso_map[corr_map_it->first].cycles = cycles;
         iso_map[corr_map_it->first].bin_id = bin_id;
+        iso_map[corr_map_it->first].index = corr_map_it->second;
     }
 
 }

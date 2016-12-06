@@ -382,7 +382,7 @@ bool load_annotation (const string & full_path_name,
             continue;
         }
 
-        current_isoform.index = (int)iso_var_map[current_isoform.chrom].size()+1;
+//        current_isoform.index = (int)iso_var_map[current_isoform.chrom].size()+1;
         pair <string, Isoform> internal_pair_for_iso_var_map (current_isoform.name, current_isoform);
         std::map <string, Isoform> internal_iso_var_map;
         internal_iso_var_map.insert(internal_pair_for_iso_var_map);
