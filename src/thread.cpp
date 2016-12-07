@@ -6,15 +6,16 @@
 void filter_weight_array (  vector<vector<double> > & weight_array,
                             const interval_map<long, MapElement> & gtf_records_splitted,
                             const std::map <string, int> & correspondence_map,
-                            double min_weight)
+                            double min_weight, double min_length)
 {
     int temp_n = 0;
     for (auto temp_it = gtf_records_splitted.begin(); temp_it != gtf_records_splitted.end(); ++temp_it) {
-//        double length = temp_it->first.upper() - temp_it->first.lower();
+        double length = temp_it->first.upper() - temp_it->first.lower();
         for (auto gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it) {
             GffRecordPtr temp_gtf_ptr = *gtf_it;
             int index = correspondence_map.find(temp_gtf_ptr->isoform_id)->second;
-            if (weight_array[index][temp_n] == min_weight && (temp_gtf_ptr->start_exon || temp_gtf_ptr->stop_exon) ){
+            if ( ( weight_array[index][temp_n] == min_weight && (temp_gtf_ptr->start_exon || temp_gtf_ptr->stop_exon) ) ||
+                 length <= min_length ){
                 weight_array[index][temp_n] = 0;
             }
         }
@@ -351,8 +352,8 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 freeze = false;
             }
 
-
-            filter_weight_array (weight_array, gtf_records_splitted, correspondence_map, min_weight);
+            double min_length = 10; // TODO put it in parameters
+            filter_weight_array (weight_array, gtf_records_splitted, correspondence_map, min_weight, min_length);
 
 
             if (test_mode) {

@@ -38,4 +38,5 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 void filter_weight_array (  vector<vector<double> > & weight_array,
                             const interval_map<long, MapElement> & gtf_records_splitted,
                             const std::map <string, int> & correspondence_map,
-                            double min_weight );
+                            double min_weight,
+                            double min_length );
