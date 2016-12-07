@@ -172,7 +172,7 @@ void subtract_matrix (vector <vector <double> > & first, const vector <vector <d
 }
 
 
-int run_cycle (vector <vector <double> > & weight_array){
+int run_cycle (vector <vector <double> > & weight_array, double & res_sum){
     double cutoff = 10e-9; // TODO put it in separate configuration file
     int cycles = 0;
     vector <vector <double> > tmp_matrix;
@@ -208,6 +208,7 @@ int run_cycle (vector <vector <double> > & weight_array){
 //        print_weight_array(tmp_matrix, "Substracted matrix");
         double sum = sum_all (tmp_matrix);
 //        cerr << " Sum: " << sum << endl;
+        res_sum = sum;
         if( sum < cutoff ){
             break;
         }
