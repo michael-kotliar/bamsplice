@@ -23,7 +23,7 @@ void print_isoform_by_name (const vector<vector<double> > & data_array,
                             string chr,
                             string isoform_name,
                             std::ostream & out = cout);
-void print_weight_array(const vector<vector<double> > & weight_array, const std::map <string, int> & correspondence_map, const string & title = "");
+void print_weight_array(const vector<vector<double> > & weight_array, const std::map <string, int> & correspondence_map, double min_weight, const string & title = "");
 void transform_to_density ( vector <vector <double> > & weight_array);
 double get_sum_by_row (const vector <vector <double> > & weight_array, const int & row, int & count);
 double get_average_by_row (const vector <vector <double> > & weight_array, const int & row);

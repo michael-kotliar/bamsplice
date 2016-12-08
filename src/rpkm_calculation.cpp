@@ -24,7 +24,7 @@ void print_isoform_by_name (const vector<vector<double> > & data_array,
 
 
 
-void print_weight_array(const vector<vector<double> > & weight_array, const std::map <string, int> & correspondence_map, const string & title){
+void print_weight_array(const vector<vector<double> > & weight_array, const std::map <string, int> & correspondence_map, double min_weight, const string & title){
     std::map <int, string> index_name_map;
     index_name_map[0] = "Length";
     for (auto it = correspondence_map.begin(); it != correspondence_map.end(); ++it){
@@ -39,8 +39,10 @@ void print_weight_array(const vector<vector<double> > & weight_array, const std:
         for (int j = 0; j < weight_array[i].size(); j++) {
             if (weight_array[i][j] == 0){
                 cout << setw(16) << "-----";
+            } else if (weight_array[i][j] > min_weight) {
+                cout << std::left << setw(16) <<  weight_array[i][j];
             } else {
-                cout << std::left << setw(16) << weight_array[i][j];
+                cout << std::left << setw(16) << "0";
             }
         }
         cout << endl;

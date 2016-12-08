@@ -376,20 +376,20 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
 
             // Original weight array
-            print_weight_array(weight_array, correspondence_map, "Original weight array");
+            print_weight_array(weight_array, correspondence_map, min_weight, "Original weight array");
             // Unique weight array
-            print_weight_array(unique_weight_array, correspondence_map, "Unique weight array");
+            print_weight_array(unique_weight_array, correspondence_map, min_weight, "Unique weight array");
 
 //        cout << "DEBUG NM_001198798" << endl;
 //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
 
             // Transormed to density
             transform_to_density(weight_array);
-            print_weight_array(weight_array, correspondence_map, "Original density array");
+            print_weight_array(weight_array, correspondence_map, min_weight, "Original density array");
 
             // Transormed to unique density
             transform_to_density(unique_weight_array);
-            print_weight_array(unique_weight_array, correspondence_map, "Unique density array");
+            print_weight_array(unique_weight_array, correspondence_map, min_weight, "Unique density array");
 
 
             //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
@@ -399,7 +399,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             int cycles = run_cycle(weight_array, res_sum);
             cerr << "[" << thread_number << "] " << "Finished to run cycles : " << cycles << endl;
             cerr << "[" << thread_number << "] " << "Result sum : " << res_sum << endl;
-            print_weight_array(weight_array, correspondence_map, "Final density array");
+            print_weight_array(weight_array, correspondence_map, min_weight, "Final density array");
             cout << endl;
             stringstream ss;
             ss << thread_number << "." << k << "." << bin;
