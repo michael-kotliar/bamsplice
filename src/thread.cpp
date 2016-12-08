@@ -352,7 +352,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 freeze = false;
             }
 
-            double min_length = 10; // TODO put it in parameters
+            double min_length = 7; // TODO put it in parameters
             filter_weight_array (weight_array, gtf_records_splitted, correspondence_map, min_weight, min_length);
 
 
