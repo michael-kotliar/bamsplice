@@ -14,8 +14,9 @@ void filter_weight_array (  vector<vector<double> > & weight_array,
         for (auto gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it) {
             GffRecordPtr temp_gtf_ptr = *gtf_it;
             int index = correspondence_map.find(temp_gtf_ptr->isoform_id)->second;
-            if ( ( weight_array[index][temp_n] == min_weight && (temp_gtf_ptr->start_exon || temp_gtf_ptr->stop_exon) ) ||
-                 length <= min_length ){
+            if ( ( weight_array[index][temp_n] == min_weight && (temp_gtf_ptr->start_exon || temp_gtf_ptr->stop_exon) )
+                 || length <= min_length
+                    ){
                 weight_array[index][temp_n] = 0;
             }
         }
@@ -116,6 +117,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             }
             // create an empty matrix: column - one interval from interval map, row - isoforms, initialize it with 0
             vector<vector<double> > weight_array(start_count+1, vector<double>(gtf_records_splitted.iterative_size(), 0));
+            vector<vector<double> > unique_weight_array(start_count+1, vector<double>(gtf_records_splitted.iterative_size(), 0));
             // Set the length of intervals into the first line of weight_array
             // put min_weight value instead of the 0 in all of the intervals where we have exons
             double min_weight = 1.0e-29; // TODO put it as argument
@@ -126,10 +128,12 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 double length = temp_it->first.upper() - temp_it->first.lower();
                 assert (length > 0);
                 weight_array[0][temp_n] = length;
+                unique_weight_array[0][temp_n] = length;
                 for (auto gtf_it = temp_it->second.gtf_records.begin(); gtf_it != temp_it->second.gtf_records.end(); ++gtf_it) {
                     GffRecordPtr temp_gtf_ptr = *gtf_it;
                     pair <std::map <string, int>::iterator, bool> res = correspondence_map.insert (pair <string, int> (temp_gtf_ptr->isoform_id, correspondence_map.size()+1) );
                     weight_array[res.first->second][temp_n] = min_weight;
+                    unique_weight_array[res.first->second][temp_n] = min_weight;
                 }
                 temp_n++;
             }
@@ -306,10 +310,9 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                                 continue; // go to next isoform if annotation in current set don't form an "unbreakable" line
                             }
 
-                            // iterating iver annotation of one specific isoform from iso_map and add to each of them
+                            // iterating over annotation of one specific isoform from iso_map and add to each of them
                             // pointer to a current bam record
-                            for (auto gff_it = map_iterator->second.begin();
-                                 gff_it != map_iterator->second.end(); ++gff_it) {
+                            for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it) {
                                 BamRecordPtr bam_record_to_put_in_array = current_bam_record; // put it just in case. should be the same as just push original pointer to array, 'cos push copies
                                 gff_it->annotation->bam_records.push_back(bam_record_to_put_in_array);
                                 gff_it->annotation->reads_count++;
@@ -339,6 +342,14 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                                 for (int i = start_i; i <= stop_i; i++) {
                                     weight_array[j][i] += weight;
                                 }
+
+                                // to add data to weigth arrays that includes only reads count that unique to the current isofrom
+                                if (vertical_koef == 1){
+                                    for (int i = start_i; i <= stop_i; i++) {
+                                        unique_weight_array[j][i] += weight;
+                                    }
+                                }
+
                             }
                         }
                     }
@@ -366,6 +377,8 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
             // Original weight array
             print_weight_array(weight_array, correspondence_map, "Original weight array");
+            // Unique weight array
+            print_weight_array(unique_weight_array, correspondence_map, "Unique weight array");
 
 //        cout << "DEBUG NM_001198798" << endl;
 //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
@@ -373,6 +386,11 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             // Transormed to density
             transform_to_density(weight_array);
             print_weight_array(weight_array, correspondence_map, "Original density array");
+
+            // Transormed to unique density
+            transform_to_density(unique_weight_array);
+            print_weight_array(unique_weight_array, correspondence_map, "Unique density array");
+
 
             //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
 
