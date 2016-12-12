@@ -68,6 +68,18 @@ int main(int argc, char **argv) {
         results_path = string (argv[4]);
     }
 
+    int min_length = 0;
+    if (argc > 5 && (!test_mode) ){
+        string min_length_str = string (argv[5]);
+        if ( !str_to_int(min_length, min_length_str)){
+            cerr << "Cannot evaluate minimal interval length from " << min_length_str << endl;
+            cerr << "Minimal interval length filtering is disabled" << endl;
+        } else {
+            cerr << "Set minimal interval length filtering to " << min_length_str << endl;
+        }
+    }
+
+
     // Set paths to bam and annotation files
     string bam_full_path_name = string(argv[1]);
     string annotation_full_path_name = string(argv[2]);
@@ -203,7 +215,7 @@ int main(int argc, char **argv) {
                 cerr << start_subvector + j << ". " << chrom_vector[j]->first << endl;
             }
 
-            process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t, test_results_path));
+            process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t, test_results_path, min_length));
     }
     process_threads.join_all();
 

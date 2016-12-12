@@ -30,7 +30,8 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                  std::map <string, std::map <string, Isoform> > & iso_var_map,
                  string bam_full_path_name,
                  int thread_number,
-                 string test_results_path
+                 string test_results_path,
+                 int min_length
                 ){
     cerr << "[" << thread_number << "] " << "Run thread for chromosomes: " << endl;
     for (int i = 0; i < chrom_vector.size(); i++){
@@ -363,7 +364,6 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 freeze = false;
             }
 
-            double min_length = 7; // TODO put it in parameters
             filter_weight_array (weight_array, gtf_records_splitted, correspondence_map, min_weight, min_length);
 
 

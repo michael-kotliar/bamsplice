@@ -33,7 +33,8 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                  std::map <string, std::map <string, Isoform> > & iso_var_map,
                  string bam_full_path_name,
                  int thread_number,
-                 string test_results_path);
+                 string test_results_path,
+                 int min_length);
 
 void filter_weight_array (  vector<vector<double> > & weight_array,
                             const interval_map<long, MapElement> & gtf_records_splitted,
