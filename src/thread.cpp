@@ -31,7 +31,8 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                  string bam_full_path_name,
                  int thread_number,
                  string test_results_path,
-                 int min_length
+                 int min_length,
+                 bool keep_unique
                 ){
     cerr << "[" << thread_number << "] " << "Run thread for chromosomes: " << endl;
     for (int i = 0; i < chrom_vector.size(); i++){
@@ -396,7 +397,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
             cerr << "[" << thread_number << "] " << "Started to run cycles" << endl;
             double res_sum;
-            int cycles = run_cycle(weight_array, res_sum);
+            int cycles = run_cycle(weight_array, res_sum, unique_weight_array, keep_unique);
             cerr << "[" << thread_number << "] " << "Finished to run cycles : " << cycles << endl;
             cerr << "[" << thread_number << "] " << "Result sum : " << res_sum << endl;
             print_weight_array(weight_array, correspondence_map, min_weight, "Final density array");

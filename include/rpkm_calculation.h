@@ -31,10 +31,10 @@ double get_sum_by_column (const vector <vector <double> > & weight_array, const 
 double get_average_by_column (const vector <vector <double> > & weight_array, const int & column);
 vector <double> get_average_density_by_all_isoforms (const vector <vector <double> > & weight_array);
 vector <double> get_sum_density_by_all_intervals (const vector <vector <double> > & weight_array);
-void update_isoforms_density_to_average_for_isoform (vector <vector <double> > & weight_array);
+void update_isoforms_density_to_average_for_isoform (vector <vector <double> > & density_array, vector <vector <double> > & unique_density_array, bool keep_unique);
 void print_array (const vector <double> & intput_array, const string & title, string tab_spacer = "   ");
 void adjust_isoforms_density_by_coef (vector <vector <double> > & weight_array, const vector <double> & original_densities_by_isoforms,  const vector <double> & new_densities_by_isoforms);
-int run_cycle (vector <vector <double> > & weight_array, double & res_sum);
+int run_cycle (vector <vector <double> > & weight_array, double & res_sum, vector <vector <double> > & unique_density_array, bool keep_unique);
 double sum_all (const vector <vector <double> > dens_matrix);
 void subtract_matrix (vector <vector <double> > & first, const vector <vector <double> > & second);
 void calculate_totReads_density (const vector<vector<double> > & weight_array, std::map <string, Isoform> & iso_map,

@@ -124,12 +124,16 @@ vector <double> get_sum_density_by_all_intervals (const vector <vector <double> 
     return sum_density;
 }
 
-void update_isoforms_density_to_average_for_isoform (vector <vector <double> > & weight_array){
-    vector <double> average_densities = get_average_density_by_all_isoforms (weight_array);
-    for (int i = 1; i < weight_array.size(); i++) {
-        for (int j = 0; j < weight_array[i].size(); j++) {
-            if (weight_array[i][j] != 0 ){
-                weight_array[i][j] = average_densities[i-1];
+void update_isoforms_density_to_average_for_isoform (vector <vector <double> > & density_array, vector <vector <double> > & unique_density_array, bool keep_unique){
+    vector <double> average_densities = get_average_density_by_all_isoforms (density_array);
+    for (int i = 1; i < density_array.size(); i++) {
+        for (int j = 0; j < density_array[i].size(); j++) {
+            if (density_array[i][j] != 0 ){
+                if (density_array[i][j] < unique_density_array[i][j] && keep_unique){
+                    density_array[i][j] = unique_density_array[i][j];
+                } else {
+                    density_array[i][j] = average_densities[i-1];
+                }
             }
         }
     }
@@ -174,39 +178,36 @@ void subtract_matrix (vector <vector <double> > & first, const vector <vector <d
 }
 
 
-int run_cycle (vector <vector <double> > & weight_array, double & res_sum){
+int run_cycle (vector <vector <double> > & density_array, double & res_sum, vector <vector <double> > & unique_density_array, bool keep_unique){
     double cutoff = 10e-9; // TODO put it in separate configuration file
     int cycles = 0;
     vector <vector <double> > tmp_matrix;
-    tmp_matrix = weight_array;
+    tmp_matrix = density_array;
     // Get array of original densities sum
-    vector <double> original_sum_dens =  get_sum_density_by_all_intervals (weight_array);
+    vector <double> original_sum_dens =  get_sum_density_by_all_intervals (density_array);
 
 //    print_array (original_sum_dens, "Original density sums");
 
     for (int i = 0; i < 2000; i++){
         // Update original density array with average values for isoforms
 //        cout << endl << "Set average by row" << endl;
-        update_isoforms_density_to_average_for_isoform (weight_array);
-//        print_weight_array(weight_array, "Average density array");
+        update_isoforms_density_to_average_for_isoform (density_array, unique_density_array, keep_unique);
+//        print_weight_array(density_array, "Average density array");
 
 //        cout << endl;
-
         // Get array of temporary densities sum
-        vector <double> new_sum_dens =  get_sum_density_by_all_intervals (weight_array);
+        vector <double> new_sum_dens =  get_sum_density_by_all_intervals (density_array);
 //        print_array (original_sum_dens, "Original density sums");
 //        print_array (new_sum_dens, "New density sums");
 
 //        cout << endl << "Update according to the differenceds in original and new density sums" << endl;
-
         // Update density array according to the coef calculated by new density sums
-        adjust_isoforms_density_by_coef (weight_array, original_sum_dens, new_sum_dens);
-//        print_weight_array(weight_array, "Updated density array");
+        adjust_isoforms_density_by_coef (density_array, original_sum_dens, new_sum_dens);
+//        print_weight_array(density_array, "Updated density array");
 //        cout << endl;
-
         cycles++;
 //        cerr << "Cycle: " << cycles;
-        subtract_matrix(tmp_matrix, weight_array);
+        subtract_matrix(tmp_matrix, density_array);
 //        print_weight_array(tmp_matrix, "Substracted matrix");
         double sum = sum_all (tmp_matrix);
 //        cerr << " Sum: " << sum << endl;
@@ -215,7 +216,7 @@ int run_cycle (vector <vector <double> > & weight_array, double & res_sum){
             break;
         }
 //
-        tmp_matrix = weight_array;
+        tmp_matrix = density_array;
     }
 
     cout << "Cycles: " << cycles << endl;

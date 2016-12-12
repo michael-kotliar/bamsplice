@@ -79,6 +79,12 @@ int main(int argc, char **argv) {
         }
     }
 
+    bool keep_unique = false;
+    if (argc > 6 && (!test_mode) ){
+        if ( string (argv[6]) == "-keep_unique"){
+            keep_unique = true;
+        }
+    }
 
     // Set paths to bam and annotation files
     string bam_full_path_name = string(argv[1]);
@@ -215,7 +221,7 @@ int main(int argc, char **argv) {
                 cerr << start_subvector + j << ". " << chrom_vector[j]->first << endl;
             }
 
-            process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t, test_results_path, min_length));
+            process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t, test_results_path, min_length, keep_unique));
     }
     process_threads.join_all();
 
