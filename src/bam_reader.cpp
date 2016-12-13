@@ -16,46 +16,92 @@ void BamRecord::print (){
 };
 
 //static boost::thread_specific_ptr< list <BamRecordPtr> > saved_reads_tls;
+//list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment, int min_read_segment_length){
+//    list <BamRecordPtr> single_read_array;
+//    bool strand = ! current_alignment.IsReverseStrand();
+//    vector<CigarOp> cigar_data = current_alignment.CigarData;
+//    long start_pose = current_alignment.Position;
+//    string read_id = current_alignment.Name;
+//    int slices = 1;
+//    for (int i = 0; i < cigar_data.size(); i++){
+//        if (cigar_data[i].Type == 'N' || cigar_data[i].Type == 'D'){
+//            slices++;
+//        }
+//    }
+//    int shift = 0;
+//    for (int i = 0; i < cigar_data.size(); i++){
+//        if (cigar_data[i].Type == 'M'){
+//            shift += cigar_data[i].Length;
+//        } else if (cigar_data[i].Type == 'N' || cigar_data[i].Type == 'D') {
+//            BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices, strand));
+//            single_read_array.push_back(single_read);
+//            start_pose += shift;
+//            if (cigar_data[i].Type == 'N'){
+//                start_pose += cigar_data[i].Length;
+//            }
+//            shift = 0;
+//        }
+//    }
+//    BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices, strand));
+//    single_read_array.push_back(single_read);
+//    return single_read_array;
+//}
 
-list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment){
-    // Parse CIGAR
-    // If splice read - add all of them into array
-    // NOTE we need to put it in that list in a right order. use push_back
+
+
+
+//
+list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment, int min_read_segment_length){
+
     list <BamRecordPtr> single_read_array;
+
     bool strand = ! current_alignment.IsReverseStrand();
     vector<CigarOp> cigar_data = current_alignment.CigarData;
     long start_pose = current_alignment.Position;
     string read_id = current_alignment.Name;
+
     int slices = 1;
     for (int i = 0; i < cigar_data.size(); i++){
-        if (cigar_data[i].Type == 'N' || cigar_data[i].Type == 'D'){
+        if (cigar_data[i].Type == 'N'){ // Spliced reads are separated only by N
             slices++;
         }
     }
+
     int shift = 0;
+    int original_slices = slices;
+
     for (int i = 0; i < cigar_data.size(); i++){
-        if (cigar_data[i].Type == 'M'
-//            or
-//            cigar_data[i].Type == 'I' or
-//            cigar_data[i].Type == 'S' or
-//            cigar_data[i].Type == '=' or
-//            cigar_data[i].Type == 'X'
-             ){
+        if (cigar_data[i].Type == 'M' or cigar_data[i].Type == 'D'){
+            assert (cigar_data[i].Length > 0);
             shift += cigar_data[i].Length;
-        } else if (cigar_data[i].Type == 'N' || cigar_data[i].Type == 'D') {
-            BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices, strand));
-            single_read_array.push_back(single_read);
-            start_pose += shift;
-            if (cigar_data[i].Type == 'N'){
-                start_pose += cigar_data[i].Length;
+        } else if (cigar_data[i].Type == 'N') {
+            if (shift > min_read_segment_length){
+                BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices, strand));
+                single_read_array.push_back(single_read);
+            } else {
+                slices--;
             }
+            start_pose += shift;
+            start_pose += cigar_data[i].Length;
             shift = 0;
         }
     }
+
+    // in a case when is wasn't spliced read
     BamRecordPtr single_read (new BamRecord (start_pose, start_pose + shift, read_id, slices, strand));
     single_read_array.push_back(single_read);
+
+    // updated number of reads if some of the segments were excluded
+    if (slices < original_slices){
+        for (auto iter = single_read_array.begin(); iter != single_read_array.end(); ++iter){
+            iter->get()->slices = slices;
+        }
+    }
+
     return single_read_array;
 }
+
+
 
 
 bool flag_check (const BamAlignment & al, BamGeneralInfo & bam_general_info){
@@ -101,7 +147,7 @@ void reset_saved_reads (){
 }
 
 // Gets the new read fro the BAM file through BamReader object
-bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze){
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int min_read_segment_length, bool freeze){
 
     if( ! saved_reads_tls.get() ) {
         saved_reads_tls.reset( new list <BamRecordPtr> );
@@ -122,7 +168,7 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool fre
             bam_record.reset();
             return false;
         }
-        saved_reads_tls.reset (new list <BamRecordPtr> (split_to_single_reads (current_alignment)) );
+        saved_reads_tls.reset (new list <BamRecordPtr> (split_to_single_reads (current_alignment, min_read_segment_length)) );
         bam_record = saved_reads_tls->front();
         saved_reads_tls->pop_front();
         return true;

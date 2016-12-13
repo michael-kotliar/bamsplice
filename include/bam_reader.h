@@ -85,9 +85,9 @@ public:
 
 // FUNCTIONs
 
-list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment);
+list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment, int min_read_segment_length);
 
-bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, bool freeze = false);
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int min_read_segment_length, bool freeze = false);
 void put_bam_record_back (BamRecordPtr bam_record);
 void reset_saved_reads ();
 

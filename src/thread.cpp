@@ -32,7 +32,8 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                  int thread_number,
                  string test_results_path,
                  int min_length,
-                 bool keep_unique
+                 bool keep_unique,
+                 int min_read_segment_length
                 ){
     cerr << "[" << thread_number << "] " << "Run thread for chromosomes: " << endl;
     for (int i = 0; i < chrom_vector.size(); i++){
@@ -163,7 +164,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
             cerr << "[" << thread_number << "] " << "Processing reads" << endl;
-            while (get_bam_record(bam_reader, current_bam_record, freeze)) { // Check if I can get new record from BAM file
+            while (get_bam_record(bam_reader, current_bam_record, min_read_segment_length, freeze)) { // Check if I can get new record from BAM file
                 // Check if gtf records array is already empty. Break the while loop
                 if (current_gtf_records_splitted_it == gtf_records_splitted.end()) {
                     cout << endl << "[" << thread_number << "] " << "reached the end of interval map first" << endl;

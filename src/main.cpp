@@ -68,20 +68,32 @@ int main(int argc, char **argv) {
         results_path = string (argv[4]);
     }
 
-    int min_length = 0;
+    int min_interval_length = 0;
     if (argc > 5 && (!test_mode) ){
-        string min_length_str = string (argv[5]);
-        if ( !str_to_int(min_length, min_length_str)){
-            cerr << "Cannot evaluate minimal interval length from " << min_length_str << endl;
+        string min_interval_length_str = string (argv[5]);
+        if ( !str_to_int(min_interval_length, min_interval_length_str)){
+            cerr << "Cannot evaluate minimal interval length from " << min_interval_length_str << endl;
             cerr << "Minimal interval length filtering is disabled" << endl;
         } else {
-            cerr << "Set minimal interval length filtering to " << min_length_str << endl;
+            cerr << "Set minimal interval length filtering to " << min_interval_length_str << endl;
+        }
+    }
+
+
+    int min_read_segment_length = 0;
+    if (argc > 6 && (!test_mode) ){
+        string min_read_segment_length_str = string (argv[6]);
+        if ( !str_to_int(min_read_segment_length, min_read_segment_length_str)){
+            cerr << "Cannot evaluate minimal read segment length from " << min_read_segment_length_str << endl;
+            cerr << "Minimal read segment length filtering is disabled" << endl;
+        } else {
+            cerr << "Set minimal read segment length filtering to " << min_read_segment_length_str << endl;
         }
     }
 
     bool keep_unique = false;
-    if (argc > 6 && (!test_mode) ){
-        if ( string (argv[6]) == "-keep_unique"){
+    if (argc > 7 && (!test_mode) ){
+        if ( string (argv[7]) == "-keep_unique"){
             keep_unique = true;
         }
     }
@@ -221,7 +233,7 @@ int main(int argc, char **argv) {
                 cerr << start_subvector + j << ". " << chrom_vector[j]->first << endl;
             }
 
-            process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t, test_results_path, min_length, keep_unique));
+            process_threads.add_thread(new boost::thread(process, chrom_vector, chromosome_info_map, boost::ref(iso_var_map), bam_full_path_name, t, test_results_path, min_interval_length, keep_unique, min_read_segment_length));
     }
     process_threads.join_all();
 

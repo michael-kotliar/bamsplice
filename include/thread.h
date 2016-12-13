@@ -35,7 +35,8 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                  int thread_number,
                  string test_results_path,
                  int min_length,
-                 bool keep_unique);
+                 bool keep_unique,
+                 int min_read_segment_length);
 
 void filter_weight_array (  vector<vector<double> > & weight_array,
                             const interval_map<long, MapElement> & gtf_records_splitted,
