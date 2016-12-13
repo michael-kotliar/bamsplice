@@ -31,10 +31,14 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                  string bam_full_path_name,
                  int thread_number,
                  string test_results_path,
-                 int min_length,
-                 bool keep_unique,
-                 int min_read_segment_length
+                 Params current_param_set
                 ){
+
+    int min_length = current_param_set.min_interval_length;
+    bool keep_unique = current_param_set.keep_unique;
+    int min_read_segment_length = current_param_set.min_read_segment_length;
+    bool dUTP = current_param_set.dUTP;
+
     cerr << "[" << thread_number << "] " << "Run thread for chromosomes: " << endl;
     for (int i = 0; i < chrom_vector.size(); i++){
         cerr << "[" << thread_number << "] " << chrom_vector[i]->first << ", ";
@@ -312,7 +316,14 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 //                            cout << "Current set of annotations doesn't form linked list" << endl;
                                 continue; // go to next isoform if annotation in current set don't form an "unbreakable" line
                             }
-
+                            if (dUTP){
+                                if (current_bam_record->strand == map_iterator->second.begin()->annotation->strand){
+                                    // skip isoform because of the same strand as current read
+                                    // it's enough to check only the first exon in isoform, because all of them hve the same strand
+//                                    cerr << "dUTP skip isoform" << endl;
+                                    continue;
+                                }
+                            }
                             // iterating over annotation of one specific isoform from iso_map and add to each of them
                             // pointer to a current bam record
                             for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it) {

@@ -28,15 +28,29 @@
 
 using namespace std;
 
+struct Params {
+    int min_interval_length;
+    int min_read_segment_length;
+    bool keep_unique;
+    bool dUTP;
+    Params (int min_int, int min_seg, bool keep_u, bool dutp){
+        min_interval_length = min_int;
+        min_read_segment_length = min_seg;
+        keep_unique = keep_u;
+        dUTP = dutp;
+    }
+};
+
+
+
+
 void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector,
                  std::map <string, pair <int, int> > chromosome_info_map,
                  std::map <string, std::map <string, Isoform> > & iso_var_map,
                  string bam_full_path_name,
                  int thread_number,
                  string test_results_path,
-                 int min_length,
-                 bool keep_unique,
-                 int min_read_segment_length);
+                 Params current_param_set);
 
 void filter_weight_array (  vector<vector<double> > & weight_array,
                             const interval_map<long, MapElement> & gtf_records_splitted,
