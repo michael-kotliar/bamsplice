@@ -29,8 +29,6 @@ using namespace BamTools;
 int main(int argc, char **argv) {
     // Read the paths from arguments
 
-    int threads_number = 4; // TODO put it as argument
-
     if (argc < 3){
         cerr << "Set <full path to bam-file> <full path to tab-delimited file>" << endl;
         return 0;
@@ -66,7 +64,7 @@ int main(int argc, char **argv) {
     }
 
 
-    Params current_param_set (0, 0, false, false);
+    Params current_param_set (0, 0, false, false, 1);
 
 
     if (argc > 5 && (!test_mode) ){
@@ -91,13 +89,25 @@ int main(int argc, char **argv) {
     }
 
     if (argc > 7 && (!test_mode) ){
-        if ( string (argv[7]) == "-keep_unique"){
+        string threads_number_str = string (argv[7]);
+        if ( !str_to_int(current_param_set.threads_number, threads_number_str)){
+            cerr << "Cannot evaluate threads number from " << threads_number_str << endl;
+            cerr << "Set default thread number " << current_param_set.threads_number <<  endl;
+        } else {
+            cerr << "Set threads number to " << current_param_set.threads_number << endl;
+        }
+    }
+
+
+
+    if (argc > 8 && (!test_mode) ){
+        if ( string (argv[8]) == "-keep_unique"){
             current_param_set.keep_unique = true;
         }
     }
 
-    if (argc > 8 && (!test_mode) ){
-        if ( string (argv[8]) == "-dutp"){
+    if (argc > 9 && (!test_mode) ){
+        if ( string (argv[9]) == "-dutp"){
             current_param_set.dUTP = true;
         }
     }
@@ -200,12 +210,12 @@ int main(int argc, char **argv) {
         }
     }
 
-    int in_each_thread = (int) floor ((double)intersection_array.size() / fmin(threads_number, intersection_array.size()));
+    int in_each_thread = (int) floor ((double)intersection_array.size() / fmin(current_param_set.threads_number, intersection_array.size()));
     cerr << "on each thread: " << in_each_thread << endl;
 
     boost::thread_group process_threads;
 
-    for (int t = 0; t < fmin (threads_number, intersection_array.size()); t++){
+    for (int t = 0; t < fmin (current_param_set.threads_number, intersection_array.size()); t++){
 //        cerr << "Adding new thread" << endl;
 //
 //        vector < std::map <string, multimap <long, GffRecordPtr> >::iterator >::iterator start_subvector = intersection_array.begin() + t * in_each_thread;
@@ -226,7 +236,7 @@ int main(int argc, char **argv) {
             while ( stop_subvector != (t+1)*in_each_thread && stop_subvector != intersection_array.size()){
                 ++stop_subvector;
             }
-            if (t == fmin (threads_number, intersection_array.size()) - 1 ){
+            if (t == fmin (current_param_set.threads_number, intersection_array.size()) - 1 ){
                 stop_subvector = intersection_array.size();
             }
             vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector;

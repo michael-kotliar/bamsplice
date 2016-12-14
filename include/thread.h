@@ -33,11 +33,13 @@ struct Params {
     int min_read_segment_length;
     bool keep_unique;
     bool dUTP;
-    Params (int min_int, int min_seg, bool keep_u, bool dutp){
+    int threads_number;
+    Params (int min_int, int min_seg, bool keep_u, bool dutp, int thr_number){
         min_interval_length = min_int;
         min_read_segment_length = min_seg;
         keep_unique = keep_u;
         dUTP = dutp;
+        threads_number = thr_number;
     }
 };
 
