@@ -7,7 +7,6 @@
 
 bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord previous_bam_record, interval_map<long, MapElement>::iterator & current_gtf_records_splitted_it, bool & freeze){
 
-    static boost::thread_specific_ptr< bool > allow_skip_rest;
     if( ! allow_skip_rest.get() ) {
         allow_skip_rest.reset( new bool(false) );
     }

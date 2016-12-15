@@ -51,6 +51,8 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
     } else cerr << "[" << thread_number << "] " << "Open " << bam_reader.GetFilename() << endl;
 
     for (int k = 0; k < chrom_vector.size(); k++) {
+        reset_saved_reads();
+        allow_skip_rest.reset( new bool(false) );
         std::map<string, multimap<long, GffRecordPtr> >::iterator chrom_it = chrom_vector[k];
         string chrom = chrom_it->first;
         cerr << "[" << thread_number << "] " << "Current chromosome from annotation file: " << chrom << endl;

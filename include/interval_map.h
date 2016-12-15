@@ -10,6 +10,7 @@
 
 
 using namespace boost::icl;
+static boost::thread_specific_ptr< bool > allow_skip_rest;
 
 
 // Class for interval_map only
