@@ -28,16 +28,15 @@ void filter_weight_array (  vector<vector<double> > & weight_array,
 void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector,
                  std::map <string, pair <int, int> > chromosome_info_map,
                  std::map <string, std::map <string, Isoform> > & iso_var_map,
-                 string bam_full_path_name,
                  int thread_number,
-                 string test_results_path,
-                 Params current_param_set
+                 cxxopts::Options params
                 ){
 
-    int min_length = current_param_set.min_interval_length;
-    bool keep_unique = current_param_set.keep_unique;
-    int min_read_segment_length = current_param_set.min_read_segment_length;
-    bool dUTP = current_param_set.dUTP;
+    int min_length = params["minIntLen"].as<int>();
+    bool keep_unique = params["keepUnique"].as<bool>();
+    int min_read_segment_length = params["minReadLen"].as<int>();;
+    bool dUTP = params["dutp"].as<bool>();
+    string bam_full_path_name = params["bam"].as<string>();
 
     cerr << "[" << thread_number << "] " << "Run thread for chromosomes: " << endl;
     for (int i = 0; i < chrom_vector.size(); i++){
@@ -380,14 +379,6 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             }
 
             filter_weight_array (weight_array, gtf_records_splitted, correspondence_map, min_weight, min_length);
-
-
-            if (test_mode) {
-                stringstream ss;
-                ss << "_" << thread_number;
-                test_results_path += ss.str();
-                print_weight_array_test(weight_array, "Weight array", test_results_path);
-            }
 
 
             // Original weight array

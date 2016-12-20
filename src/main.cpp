@@ -13,7 +13,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 
-
 //#include "interval_map.h"
 //#include "rpkm_calculation.h"
 
@@ -26,103 +25,95 @@ using namespace std;
 using namespace boost::icl;
 using namespace BamTools;
 
-int main(int argc, char **argv) {
-    // Read the paths from arguments
 
-    if (argc < 3){
-        cerr << "Set <full path to bam-file> <full path to tab-delimited file>" << endl;
+bool verify_params (cxxopts::Options params){
+    // check mandatorary parameters
+    if (!params.count("bam") || !params.count("gtf") || !params.count("output")){
+        cerr << "You should set --bam, --gtf, --output parameters" << endl;
+        return false;
+    }
+
+    try { // It will never fail, because we already checked it on the parameters parsing step
+        cerr << "Parameters: " << endl;
+        cerr << "  bam: " << params["bam"].as<std::string>() << endl;
+        cerr << "  gtf: " << params["gtf"].as<std::string>() << endl;
+        cerr << "  log: " << params["log"].as<std::string>() << endl;
+        cerr << "  output: " << params["output"].as<std::string>() << endl;
+        cerr << "  minIntLen: " << params["minIntLen"].as<int>() << endl;
+        cerr << "  minReadLen: " << params["minReadLen"].as<int>() << endl;
+        cerr << "  threadNumber: " << params["threadNumber"].as<int>() << endl;
+        cerr << "  keepUnique: " << params["keepUnique"].as<bool>() << endl;
+        cerr << "  dutp: " << params["dutp"].as<bool>() << endl;
+    } catch (...){
+        cerr << "Some of the parameters have a mistake" << endl;
+        return false;
+    }
+    if (params["minIntLen"].as<int>() < 0){
+        cerr << "minIntLen cannot be less than 0" << endl;
+        return false;
+    }
+    if (params["minReadLen"].as<int>() < 0){
+        cerr << "minReadLen cannot be less than 0" << endl;
+        return false;
+    }
+    if (params["threadNumber"].as<int>() < 1){
+        cerr << "threadNumber cannot be less than 1" << endl;
+        return false;
+    }
+    return true;
+}
+
+
+
+int main(int argc, char **argv) {
+    cxxopts::Options params("GEEP", "Gene Expression Evaluation Processor");
+
+    params.add_options()
+            ("b,bam", "path to the BAM file", cxxopts::value<std::string>(),
+             "Set the path to the BAM file")
+            ("g,gtf", "path to the GTF file", cxxopts::value<std::string>(),
+             "Set the path to the GTF or TAB-delimited file")
+            ("l,log", "path to the LOG file", cxxopts::value<std::string>()->default_value("/dev/null"),
+             "Set the path to save LOG file")
+            ("o,output", "path to the output file", cxxopts::value<std::string>(),
+             "Set the path to save output file")
+            ("i,minIntLen", "minimal interval length", cxxopts::value<int>()->default_value("0"),
+             "Set the minimal interval length. All shorter intervals will be discarded")
+            ("r,minReadLen", "minimal read length", cxxopts::value<int>()->default_value("0"),
+             "Set the minimal read length. All parts of spliced reads that intersect with exon in less than minReadLen nucleotides will be discarded")
+            ("p,threadNumber", "number of threads", cxxopts::value<int>()->default_value("1"),
+             "Set the number of threads")
+            ("u,keepUnique", "flag to fix unique reads for the specific isoromf interval", cxxopts::value<bool>(),
+             "Set this flag if you want prevent distributing the isoform unique reads among other isoforms")
+            ("d,dutp", "set dutp enabled", cxxopts::value<bool>(),
+             "Set this dutp flag if strand specific analysys should be made");
+
+    try {
+        params.parse(argc, argv);
+    } catch (...){
+        cerr << "Parameter parsing error" << endl;
         return 0;
     }
 
-    // if put --test instead of path to the log file
-    if ( argc > 3 && string(argv[3]) == "--test" ){
-        test_mode = true;
-        cerr << "Test mode enabled" << endl;
+    if (!verify_params (params)){
+        return 0;
     }
 
-    string test_results_path = "";
-    if (argc > 4 && test_mode ){
-        test_results_path = string (argv[4]);
-    }
-
-    if (argc > 3 && (!test_mode) ){
-        string log_filename = string(argv[3]);
-        cerr << "Log file " << log_filename << endl;
-        freopen(log_filename.c_str(), "a", stdout); // TODO Check what happens when filename is not correct
-        time_t t = time(0);   // get time now
-        struct tm * now = localtime( & t );
-        cout << (now->tm_year + 1900) << '-'
-             << (now->tm_mon + 1) << '-'
-             << now->tm_mday << "   "
-             << now->tm_hour << ":" << now->tm_min
-             << endl << endl;
-    }
-
-    string results_path = "";
-    if (argc > 4 && (!test_mode) ){
-        results_path = string (argv[4]);
-    }
-
-
-    Params current_param_set (0, 0, false, false, 1);
-
-
-    if (argc > 5 && (!test_mode) ){
-        string min_interval_length_str = string (argv[5]);
-        if ( !str_to_int(current_param_set.min_interval_length, min_interval_length_str)){
-            cerr << "Cannot evaluate minimal interval length from " << min_interval_length_str << endl;
-            cerr << "Minimal interval length filtering is disabled" << endl;
-        } else {
-            cerr << "Set minimal interval length filtering to " << min_interval_length_str << endl;
-        }
-    }
-
-
-    if (argc > 6 && (!test_mode) ){
-        string min_read_segment_length_str = string (argv[6]);
-        if ( !str_to_int(current_param_set.min_read_segment_length, min_read_segment_length_str)){
-            cerr << "Cannot evaluate minimal read segment length from " << min_read_segment_length_str << endl;
-            cerr << "Minimal read segment length filtering is disabled" << endl;
-        } else {
-            cerr << "Set minimal read segment length filtering to " << min_read_segment_length_str << endl;
-        }
-    }
-
-    if (argc > 7 && (!test_mode) ){
-        string threads_number_str = string (argv[7]);
-        if ( !str_to_int(current_param_set.threads_number, threads_number_str)){
-            cerr << "Cannot evaluate threads number from " << threads_number_str << endl;
-            cerr << "Set default thread number " << current_param_set.threads_number <<  endl;
-        } else {
-            cerr << "Set threads number to " << current_param_set.threads_number << endl;
-        }
-    }
-
-
-
-    if (argc > 8 && (!test_mode) ){
-        if ( string (argv[8]) == "-keep_unique"){
-            current_param_set.keep_unique = true;
-        }
-    }
-
-    if (argc > 9 && (!test_mode) ){
-        if ( string (argv[9]) == "-dutp"){
-            current_param_set.dUTP = true;
-        }
-    }
-
-    // Set paths to bam and annotation files
-    string bam_full_path_name = string(argv[1]);
-    string annotation_full_path_name = string(argv[2]);
-
-
-
+    // Get the log file path or default /dev/null
+    string log_filename = params["log"].as<std::string>();
+    freopen(log_filename.c_str(), "a", stdout); // TODO Check what happens when filename is not correct
+    time_t t = time(0);   // get time now
+    struct tm * now = localtime( & t );
+    cout << (now->tm_year + 1900) << '-'
+         << (now->tm_mon + 1) << '-'
+         << now->tm_mday << "   "
+         << now->tm_hour << ":" << now->tm_min
+         << endl << endl;
 
     // read from BAM file
     BamReader bam_reader;
-    if (not bam_reader.Open(bam_full_path_name)) {
-        cerr << "Couldn't open file " << bam_full_path_name << endl;
+    if (not bam_reader.Open(params["bam"].as<std::string>())) {
+        cerr << "Couldn't open file " << params["bam"].as<std::string>() << endl;
         return 0;
     } else cerr << "Open " << bam_reader.GetFilename() << endl;
 
@@ -152,7 +143,7 @@ int main(int argc, char **argv) {
 
     // map to save <chromosome name, <isoform name, correspondent Isoform object> >
     std::map <string, std::map <string, Isoform> > iso_var_map;
-    if (not load_annotation (annotation_full_path_name, global_annotation_map_ptr, iso_var_map)){
+    if (not load_annotation (params["gtf"].as<std::string>(), global_annotation_map_ptr, iso_var_map)){
         return 0;
     }
 //    cout << endl;
@@ -194,10 +185,6 @@ int main(int argc, char **argv) {
 //            }
 //        }
 
-
-
-
-
     // TODO run thread
 
     // Get intersection of chrom names in bam and annotaion file, save iterators from global_annotation_map_ptr
@@ -210,12 +197,12 @@ int main(int argc, char **argv) {
         }
     }
 
-    int in_each_thread = (int) floor ((double)intersection_array.size() / fmin(current_param_set.threads_number, intersection_array.size()));
+    int in_each_thread = (int) floor ((double)intersection_array.size() / fmin(params["threadNumber"].as<int>(), intersection_array.size()));
     cerr << "on each thread: " << in_each_thread << endl;
 
     boost::thread_group process_threads;
 
-    for (int t = 0; t < fmin (current_param_set.threads_number, intersection_array.size()); t++){
+    for (int t = 0; t < fmin (params["threadNumber"].as<int>(), intersection_array.size()); t++){
 //        cerr << "Adding new thread" << endl;
 //
 //        vector < std::map <string, multimap <long, GffRecordPtr> >::iterator >::iterator start_subvector = intersection_array.begin() + t * in_each_thread;
@@ -236,7 +223,7 @@ int main(int argc, char **argv) {
             while ( stop_subvector != (t+1)*in_each_thread && stop_subvector != intersection_array.size()){
                 ++stop_subvector;
             }
-            if (t == fmin (current_param_set.threads_number, intersection_array.size()) - 1 ){
+            if (t == fmin (params["threadNumber"].as<int>(), intersection_array.size()) - 1 ){
                 stop_subvector = intersection_array.size();
             }
             vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector;
@@ -250,10 +237,8 @@ int main(int argc, char **argv) {
                                                          chrom_vector,
                                                          chromosome_info_map,
                                                          boost::ref(iso_var_map),
-                                                         bam_full_path_name,
                                                          t,
-                                                         test_results_path,
-                                                         current_param_set) );
+                                                         params) );
     }
     process_threads.join_all();
 
@@ -311,10 +296,9 @@ int main(int argc, char **argv) {
     calculate_rpkm (iso_var_map, bam_general_info.aligned);
     print_iso_var_map (iso_var_map);
 
-    if (results_path.length() > 0){
-        cerr << "Exporting results" << endl;
-        print_iso_var_map_to_file (iso_var_map, results_path);
-    }
+
+    cerr << "Exporting results" << endl;
+    print_iso_var_map_to_file (iso_var_map, params["output"].as<std::string>());
 
 
     // FOR DEBUG USE ONLY

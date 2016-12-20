@@ -13,6 +13,5 @@
 #endif //GEEP_TEST_H
 
 using namespace std;
-extern bool test_mode;
 
 void print_weight_array_test(vector <vector <double> > weight_array, const string & title, const string & path);

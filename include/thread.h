@@ -26,6 +26,8 @@
 #include <boost/thread.hpp>
 #include "test.h"
 
+#include <cxxopts/cxxopts.hpp>
+
 using namespace std;
 
 struct Params {
@@ -49,10 +51,8 @@ struct Params {
 void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector,
                  std::map <string, pair <int, int> > chromosome_info_map,
                  std::map <string, std::map <string, Isoform> > & iso_var_map,
-                 string bam_full_path_name,
                  int thread_number,
-                 string test_results_path,
-                 Params current_param_set);
+                 cxxopts::Options params);
 
 void filter_weight_array (  vector<vector<double> > & weight_array,
                             const interval_map<long, MapElement> & gtf_records_splitted,
