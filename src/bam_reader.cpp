@@ -101,20 +101,20 @@ list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignmen
     return single_read_array;
 }
 
-
-
-
 bool flag_check (const BamAlignment & al, BamGeneralInfo & bam_general_info){
-    // TODO add other checks for pair-end reads
     bam_general_info.total++;
-    if(al.IsMapped()) {
-        if(al.IsPaired() && (!al.IsProperPair())) {
-            bam_general_info.not_aligned++;
-            return false;
-        }
-        if(al.IsPaired() && al.IsProperPair() && al.IsMateMapped() ) {
-            // Looks like to exclude chimeric reads
-            if( ( (al.Position<al.MatePosition) && al.IsReverseStrand() ) || ( (al.MatePosition < al.Position) && al.IsMateReverseStrand() )) {
+    if( al.IsMapped() && al.IsPrimaryAlignment() && (!al.IsDuplicate()) ) {
+        if (al.IsPaired()){
+            if(al.IsProperPair() && al.IsMateMapped() ) {
+                // The only possible situation when it may happen is when read was mapped on the wrong strand
+                if( (!(al.IsReverseStrand() ^ al.IsMateReverseStrand())           ) ||  // both mates came from the same strand
+                    ( (al.Position < al.MatePosition) && al.IsReverseStrand()     ) ||
+                    ( (al.MatePosition < al.Position) && al.IsMateReverseStrand() )
+                        ) {
+                    bam_general_info.not_aligned++;
+                    return false;
+                }
+            } else {
                 bam_general_info.not_aligned++;
                 return false;
             }
