@@ -87,7 +87,7 @@ public:
 
 list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignment, int min_read_segment_length);
 
-bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int min_read_segment_length, bool freeze = false);
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int min_read_segment_length, bool dUTP, bool freeze = false);
 void put_bam_record_back (BamRecordPtr bam_record);
 void reset_saved_reads ();
 
@@ -96,8 +96,8 @@ void print_ref_info (const std::map <string, pair <int, int> > & info_map);
 std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & reader);
 
 bool make_index (BamReader & bam_reader);
-bool flag_check (const BamAlignment & al, BamGeneralInfo & bam_general_info);
-bool flag_check (const BamAlignment & al);
+bool flag_check (BamAlignment & al, BamGeneralInfo & bam_general_info, bool dUTP);
+bool flag_check (BamAlignment & al, bool dUTP);
 void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info);
 
 

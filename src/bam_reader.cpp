@@ -101,18 +101,32 @@ list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignmen
     return single_read_array;
 }
 
-bool flag_check (const BamAlignment & al, BamGeneralInfo & bam_general_info){
+bool flag_check (BamAlignment & al, BamGeneralInfo & bam_general_info, bool dUTP){
     bam_general_info.total++;
     if( al.IsMapped() && al.IsPrimaryAlignment() && (!al.IsDuplicate()) ) {
         if (al.IsPaired()){
             if(al.IsProperPair() && al.IsMateMapped() ) {
                 // The only possible situation when it may happen is when read was mapped on the wrong strand
-                if( (!(al.IsReverseStrand() ^ al.IsMateReverseStrand())           ) ||  // both mates came from the same strand
+                if( (!(al.IsReverseStrand() ^ al.IsMateReverseStrand())           ) ||  // both mates came from the same strand. it shouldn't be like this
                     ( (al.Position < al.MatePosition) && al.IsReverseStrand()     ) ||
                     ( (al.MatePosition < al.Position) && al.IsMateReverseStrand() )
                         ) {
                     bam_general_info.not_aligned++;
                     return false;
+                }
+
+//              // It looks like when we use DUTP we count strand only for the first mate in pair
+//              // we artificially change the strand of second mate pair to be equal the strand of main mate in a pair
+//              // TODO Think if we really should do like this?
+//              // TODO Do we need to check any other conditions?
+                if (dUTP){
+                    if(al.IsMateMapped() && al.IsSecondMate()) {
+                        if(al.IsReverseStrand()) {
+                            al.SetIsReverseStrand(false);
+                        } else {
+                            al.SetIsReverseStrand(true);
+                        }
+                    }
                 }
             } else {
                 bam_general_info.not_aligned++;
@@ -126,9 +140,9 @@ bool flag_check (const BamAlignment & al, BamGeneralInfo & bam_general_info){
     return true;
 }
 
-bool flag_check (const BamAlignment & al){
+bool flag_check (BamAlignment & al, bool dUTP){
     BamGeneralInfo bam_general_info;
-    return flag_check (al, bam_general_info);
+    return flag_check (al, bam_general_info, dUTP);
 }
 
 
@@ -147,7 +161,7 @@ void reset_saved_reads (){
 }
 
 // Gets the new read fro the BAM file through BamReader object
-bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int min_read_segment_length, bool freeze){
+bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int min_read_segment_length, bool dUTP, bool freeze){
 
     if( ! saved_reads_tls.get() ) {
         saved_reads_tls.reset( new list <BamRecordPtr> );
@@ -164,7 +178,7 @@ bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int min_
 
     BamAlignment current_alignment;
     while (bam_reader.GetNextAlignment(current_alignment)){
-        if (not flag_check (current_alignment)) {
+        if (not flag_check (current_alignment, dUTP)) {
             continue;
         }
         saved_reads_tls.reset (new list <BamRecordPtr> (split_to_single_reads (current_alignment, min_read_segment_length)) );
@@ -278,7 +292,7 @@ void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info){
         cerr << "Couldn't find any file with mapping statistics. Calculating ..." << endl;
         BamAlignment al;
         while (bam_reader.GetNextAlignment(al)){
-            flag_check (al, bam_general_info);
+            flag_check (al, bam_general_info, false);
         }
         bam_general_info.aligned = bam_general_info.total - bam_general_info.not_aligned;
         bam_reader.Rewind();

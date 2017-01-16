@@ -169,7 +169,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
             cerr << "[" << thread_number << "] " << "Processing reads" << endl;
-            while (get_bam_record(bam_reader, current_bam_record, min_read_segment_length, freeze)) { // Check if I can get new record from BAM file
+            while (get_bam_record(bam_reader, current_bam_record, min_read_segment_length, dUTP, freeze)) { // Check if I can get new record from BAM file
                 // Check if gtf records array is already empty. Break the while loop
                 if (current_gtf_records_splitted_it == gtf_records_splitted.end()) {
                     cout << endl << "[" << thread_number << "] " << "reached the end of interval map first" << endl;
@@ -320,7 +320,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                             if (dUTP){
                                 if (current_bam_record->strand == map_iterator->second.begin()->annotation->strand){
                                     // skip isoform because of the same strand as current read
-                                    // it's enough to check only the first exon in isoform, because all of them hve the same strand
+                                    // it's enough to check only the first exon in isoform, because all of them have the same strand
 //                                    cerr << "dUTP skip isoform" << endl;
                                     continue;
                                 }
