@@ -118,4 +118,6 @@ bool load_annotation (const string & full_path_name,
                       std::map <string, multimap <long, GffRecordPtr> > & global_annotation_map_ptr,
                       std::map <string, std::map <string, Isoform> > & iso_var_map);
 
+bool is_duplicate (const Isoform & original_isoform, const Isoform & new_isoform, bool gtf);
+
 map <string, string> split_attributes (string line);

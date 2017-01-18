@@ -43,37 +43,37 @@ void rearrange_array_from_gtf (vector<string> & input){
 
 
 void Isoform::print (){
-    cerr << "bin: " << bin << endl;
-    cerr << "isoform: " << name << endl;
-    cerr << "chrom: " << chrom << endl;
-    cerr << "name: " << name << endl;
-    cerr << "strand: " << strand << endl;
-    cerr << "[tx_start, tx_end]: [" << tx_start << ", " << tx_end << "]" << endl;
-    cerr << "[cds_start, cds_end]: [" << cds_start << ", " << cds_end << "]" << endl;
-    cerr << "exon_count: " << exon_count << endl;
-    cerr << "length: " << length << endl;
-    cerr << "total_reads: " << total_reads << endl;
-    cerr << "density: " << density << endl;
-    cerr << "rpkm: " << rpkm << endl;
-    cerr << "index: " << index << endl;
-    cerr << "exon_starts.size(): " << exon_starts.size() << endl;
-    cerr << "exon_ends.size(): " << exon_ends.size() << endl;
+    cout << "bin: " << bin << endl;
+    cout << "isoform: " << name << endl;
+    cout << "chrom: " << chrom << endl;
+    cout << "name: " << name << endl;
+    cout << "strand: " << strand << endl;
+    cout << "[tx_start, tx_end]: [" << tx_start << ", " << tx_end << "]" << endl;
+    cout << "[cds_start, cds_end]: [" << cds_start << ", " << cds_end << "]" << endl;
+    cout << "exon_count: " << exon_count << endl;
+    cout << "length: " << length << endl;
+    cout << "total_reads: " << total_reads << endl;
+    cout << "density: " << density << endl;
+    cout << "rpkm: " << rpkm << endl;
+    cout << "index: " << index << endl;
+    cout << "exon_starts.size(): " << exon_starts.size() << endl;
+    cout << "exon_ends.size(): " << exon_ends.size() << endl;
 //    cout << "exon_frames.size(): " << exon_frames.size() << endl;
-    cerr << "Exons starts:" << endl;
+    cout << "Exons starts:" << endl;
     for (auto it = exon_starts.begin(); it != exon_starts.end(); ++it){
         cerr << *it << endl;
     }
-    cerr << "Exons ends:" << endl;
+    cout << "Exons ends:" << endl;
     for (auto it = exon_ends.begin(); it != exon_ends.end(); ++it){
         cerr << *it << endl;
     }
 //    for (int i = 0; i < exon_count; i++){
 //        cout << "  " << i << ") " << "[" << exon_starts[i] << ", "<< exon_ends[i] << "] - " << endl;
 //    }
-    cerr << "score: " << score << endl;
-    cerr << "name2: " << name2 << endl;
-    cerr << "cds_start_stat: " << cds_start_stat << endl;
-    cerr << "cds_end_stat: " << cds_end_stat << endl;
+    cout << "score: " << score << endl;
+    cout << "name2: " << name2 << endl;
+    cout << "cds_start_stat: " << cds_start_stat << endl;
+    cout << "cds_end_stat: " << cds_end_stat << endl;
 }
 
 
@@ -346,6 +346,27 @@ void print_iso_var_map_to_file (const std::map <string, std::map <string, Isofor
 }
 
 
+bool is_duplicate (const Isoform & original_isoform, const Isoform & new_isoform, bool gtf){
+    if (not gtf){
+        // if not gtf, than we work with tab delimited file, where each line is one isoform
+        // In this case it's not allowed to have few lines with the same isoform name inside one chromosome
+        // We call this function only after we noticed that isoform name already exist in our map
+        // So we don't need to check any additional rules to return true - to update the name of the isoform
+        // This works good for two situation: two isoforms have the same name and strand, two isoforms have the same name,
+        // but different strand
+        return true;
+    } else {
+        // if we work with gtf file we need to check if strand differs from the strand of existing isoform with the same name in our map
+        // If strand is not the same, we need to return true to update the name of the isofirm
+        // If strand is the same it means, that we process the next exon from the same isoform and we don't need to change the isoform name
+        if (original_isoform.strand != new_isoform.strand){
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
 
 // global_annotation_map_ptr : key - chromosome name, value - multimap of annotations, sorted by not-unique key - start pose of annotation
 // NOTE : forward list of annotations should be sorted by start pose with rule a<b
@@ -382,7 +403,6 @@ bool load_annotation (const string & full_path_name,
             continue;
         }
 
-//        current_isoform.index = (int)iso_var_map[current_isoform.chrom].size()+1;
         pair <string, Isoform> internal_pair_for_iso_var_map (current_isoform.name, current_isoform);
         std::map <string, Isoform> internal_iso_var_map;
         internal_iso_var_map.insert(internal_pair_for_iso_var_map);
@@ -391,11 +411,33 @@ bool load_annotation (const string & full_path_name,
         pair <string, std::map <string, Isoform> > external_pair_for_iso_var_map (current_isoform.chrom, internal_iso_var_map);
         res = iso_var_map.insert (external_pair_for_iso_var_map);
         if ( !res.second ){
-            pair <std::map <string, Isoform>::iterator, bool> insert_iso_res;
-            insert_iso_res = res.first->second.insert(internal_pair_for_iso_var_map);
-            if ( !insert_iso_res.second ){
-                // we already have this isoform in our map std::map <string, Isoform>
-                insert_iso_res.first->second += current_isoform;
+            bool isoform_in_process = true;
+            int i = 0; // variable to add to the end of isoform name, when duplicate is allowed
+            while (isoform_in_process){
+                pair <std::map <string, Isoform>::iterator, bool> insert_iso_res;
+                insert_iso_res = res.first->second.insert(internal_pair_for_iso_var_map);
+                if ( !insert_iso_res.second ){
+                    i++;
+                    if (is_duplicate (insert_iso_res.first->second, current_isoform, gtf)){
+                        // need to update isoform name in current_isoform
+                        size_t dup_pos = current_isoform.name.find ("_dup");
+                        if (dup_pos == string::npos){
+                            // This is the first time when we rename the isoform
+                            // We should add _dup suffix
+                            current_isoform.name = current_isoform.name + "_dup" + to_string(i);
+                        } else {
+                            // Out isoform name already have _dup suffix, so we need to update only the number after _dup
+                            current_isoform.name = current_isoform.name.substr(0, dup_pos) + "_dup" + to_string(i);
+                        }
+                        cerr << "Duplicate isoform name. Name is updated to " << current_isoform.name << endl;
+                        internal_pair_for_iso_var_map.first = current_isoform.name;
+                        internal_pair_for_iso_var_map.second = current_isoform;
+                        continue;
+                    }
+                    // we already have this isoform in our map std::map <string, Isoform>
+                    insert_iso_res.first->second += current_isoform;
+                }
+                isoform_in_process = false;
             }
         }
     }
