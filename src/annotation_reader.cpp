@@ -25,8 +25,8 @@ void rearrange_array_from_gtf (vector<string> & input){
     output.push_back(input[9]); //  1: name                  (string)
     output.push_back(input[0]); //  2: chrom                 (string)
     output.push_back(input[6]); //  3: strand                (+/-)
-    output.push_back("0"); //         4: tx_start              (long)
-    output.push_back("0"); //         5: tx_end                (long)
+    output.push_back(input[3]); //  4: tx_start              (long)  !!! Equal to exon_starts. In a case of GTF it will be only one value
+    output.push_back(input[4]); //  5: tx_end                (long)  !!! Equal to exon_ends. In a case of GTF it will be only one value
     output.push_back("0"); //         6: cds_start             (long)
     output.push_back("0"); //         7: cds_end               (long)
     output.push_back("1"); //         8: exon_count            (long)
@@ -201,7 +201,8 @@ Isoform::Isoform (string line, bool gtf):
 //        throw ("Isoform class constructor fail");
 //    };
 
-    if (gtf){// update coordinates if GTF TODO double check if it's correct to do like this
+    if (gtf){ // update coordinates if GTF TODO double check if it's correct to do like this
+        tx_start = tx_start - 1; // Changing the TSS to correspond 0-based corodinate system
         set <long> exon_starts_new;
         for (auto it = exon_starts.begin(); it != exon_starts.end(); ++it){
             exon_starts_new.insert (*it-1);
@@ -265,6 +266,8 @@ Isoform& Isoform::operator+=(const Isoform& other_iso){
     exon_starts.insert(other_iso.exon_starts.begin(), other_iso.exon_starts.end());
     exon_ends.insert(other_iso.exon_ends.begin(), other_iso.exon_ends.end());
 //    exon_frames.insert(exon_frames.end(), other_iso.exon_frames.begin(), other_iso.exon_frames.end());
+    tx_start = *exon_starts.begin();
+    tx_end = *exon_ends.rbegin();
     return *this;
 }
 
@@ -345,6 +348,39 @@ void print_iso_var_map_to_file (const std::map <string, std::map <string, Isofor
     else cout << "Unable to open output file: " << path << endl;
 }
 
+
+void export_isoform_group (const std::map <string, std::map <string, Isoform> > & iso_var_map, const string path){
+    ofstream output_stream (path);
+    if (output_stream.is_open())
+    {
+        output_stream // header line
+                << "RefseqId" << ","
+                << "GeneId" << ","
+                << "Chrom" << ","
+                << "TxStart" << ","
+                << "TxEnd" << ","
+                << "Strand" << ","
+                << "TotalReads" << ","
+                << "Rpkm" << endl;
+        for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
+            for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
+                std::string strand_str = int_it->second.strand?"+":"-";
+                output_stream
+                        << int_it->first << "," // RefseqId
+                        << int_it->second.name2 << "," // GeneId
+                        << ext_it->first << "," // Chrom
+                        << int_it->second.tx_start << ","
+                        << int_it->second.tx_end << ","
+                        << strand_str << ","
+                        << int_it->second.total_reads << ","
+                        << int_it->second.rpkm << endl;
+            }
+        }
+        output_stream.close();
+        cerr << "Results are successfully exported to " << path << endl;
+    }
+    else cout << "Unable to open output file: " << path << endl;
+}
 
 bool is_duplicate (const Isoform & original_isoform, const Isoform & new_isoform, bool gtf){
     if (not gtf){

@@ -75,8 +75,8 @@ int main(int argc, char **argv) {
              "Set the path to the GTF or TAB-delimited file")
             ("l,log", "path to the LOG file", cxxopts::value<std::string>()->default_value("/dev/null"),
              "Set the path to save LOG file")
-            ("o,output", "path to the output file", cxxopts::value<std::string>(),
-             "Set the path to save output file")
+            ("o,output", "prefis for the output files", cxxopts::value<std::string>(),
+             "Set the prefix to save output files")
             ("i,minIntLen", "minimal interval length", cxxopts::value<int>()->default_value("0"),
              "Set the minimal interval length. All shorter intervals will be discarded")
             ("r,minReadLen", "minimal read length", cxxopts::value<int>()->default_value("0"),
@@ -299,8 +299,9 @@ int main(int argc, char **argv) {
 
 
     cerr << "Exporting results" << endl;
-    print_iso_var_map_to_file (iso_var_map, params["output"].as<std::string>());
+    print_iso_var_map_to_file (iso_var_map, params["output"].as<std::string>()+"raw.txt");
 
+    export_isoform_group (iso_var_map, params["output"].as<std::string>()+"isoforms.csv");
 
     // FOR DEBUG USE ONLY
 //    cout << endl << "RESULTS" << endl;
