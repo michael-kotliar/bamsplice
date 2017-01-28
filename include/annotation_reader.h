@@ -111,6 +111,8 @@ bool str_to_cds_stat(const string &value, cds_stat &result);
 void print_iso_var_map (const std::map <string, std::map <string, Isoform> > & iso_var_map);
 void print_iso_var_map_to_file (const std::map <string, std::map <string, Isoform> > & iso_var_map, const string path);
 void export_isoform_group (const std::map <string, std::map <string, Isoform> > & iso_var_map, const string path);
+void export_gene_group (const std::map <string, std::map <string, Isoform> > & iso_var_map, const string path);
+std::map <string, std::map <string, Isoform> > group_by_gene (const std::map <string, std::map <string, Isoform> > & iso_var_map);
 
 // global_annotation_map_ptr : key - chromosome name, value - multimap of annotations, sorted by not-unique key - start pose of annotation
 // NOTE : forward list of annotations should be sorted by start pose with rule a<b

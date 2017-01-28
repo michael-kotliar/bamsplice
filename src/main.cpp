@@ -302,6 +302,8 @@ int main(int argc, char **argv) {
     print_iso_var_map_to_file (iso_var_map, params["output"].as<std::string>()+"raw.txt");
 
     export_isoform_group (iso_var_map, params["output"].as<std::string>()+"isoforms.csv");
+    export_gene_group (iso_var_map, params["output"].as<std::string>()+"genes.csv");
+
 
     // FOR DEBUG USE ONLY
 //    cout << endl << "RESULTS" << endl;

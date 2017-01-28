@@ -366,7 +366,7 @@ void export_isoform_group (const std::map <string, std::map <string, Isoform> > 
             for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
                 std::string strand_str = int_it->second.strand?"+":"-";
                 output_stream
-                        << int_it->first << "," // RefseqId
+                        << int_it->second.name << "," // RefseqId
                         << int_it->second.name2 << "," // GeneId
                         << ext_it->first << "," // Chrom
                         << int_it->second.tx_start << ","
@@ -381,6 +381,43 @@ void export_isoform_group (const std::map <string, std::map <string, Isoform> > 
     }
     else cout << "Unable to open output file: " << path << endl;
 }
+
+
+std::map <string, std::map <string, Isoform> > group_by_gene (const std::map <string, std::map <string, Isoform> > & iso_var_map){
+    // map to save <chromosome name, <gene name, correspondent Isoform object> >
+    std::map <string, std::map <string, Isoform> > gene_var_map;
+    for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
+        for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
+            pair <string, Isoform> internal_pair_for_gene_var_map (int_it->second.name2, int_it->second);
+            std::map <string, Isoform> internal_gene_var_map;
+            internal_gene_var_map.insert(internal_pair_for_gene_var_map);
+            pair <std::map <string, std::map <string, Isoform> >::iterator, bool> res;
+            pair <string, std::map <string, Isoform> > external_pair_for_gene_var_map (ext_it->first, internal_gene_var_map);
+            res = gene_var_map.insert (external_pair_for_gene_var_map);
+            if ( !res.second ){
+                pair <std::map <string, Isoform>::iterator, bool> insert_gene_res;
+                insert_gene_res = res.first->second.insert(internal_pair_for_gene_var_map);
+                if ( !insert_gene_res.second ){
+                    // we already have this gene in our map std::map <string, Isoform>
+                    insert_gene_res.first->second.name = insert_gene_res.first->second.name + " " + int_it->second.name; // Concatenate names of two isofroms
+                    insert_gene_res.first->second.total_reads = insert_gene_res.first->second.total_reads + int_it->second.total_reads; // Sum total reads number
+                    insert_gene_res.first->second.rpkm = insert_gene_res.first->second.rpkm + int_it->second.rpkm; // Sum rpkm values
+//                    assert (insert_gene_res.first->second.tx_start == int_it->second.tx_start); // suppose to be the same for the gene
+//                    assert (insert_gene_res.first->second.tx_end == int_it->second.tx_end); // suppose to be the same for the gene
+                }
+            }
+        }
+    }
+    return gene_var_map;
+};
+
+void export_gene_group (const std::map <string, std::map <string, Isoform> > & iso_var_map, const string path){
+    std::map <string, std::map <string, Isoform> > gene_var_map = group_by_gene (iso_var_map);
+    export_isoform_group (gene_var_map, path);
+}
+
+
+
 
 bool is_duplicate (const Isoform & original_isoform, const Isoform & new_isoform, bool gtf){
     if (not gtf){
