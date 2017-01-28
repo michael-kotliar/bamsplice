@@ -34,7 +34,6 @@ public:
     long end_pose; // stop position of annotation
     string exon_id; // text-identificator of current annotation. Looks like we will use it only for debug
     string isoform_id; // set the name of the isoform to which current annotation belongs
-    vector < BamRecordPtr > bam_records; // array of pointers to all of the reads, which belongs to this exon. Need this for debug, than we can delete this field
     int reads_count; // total number of reads, which belongs to this exon
     bool strand; // true for +
     bool start_exon;

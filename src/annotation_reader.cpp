@@ -454,11 +454,13 @@ bool load_annotation (const string & full_path_name,
 
 
 
-    GffRecordPtr previous_annotation;
-    previous_annotation.reset();
+//    GffRecordPtr previous_annotation;
+//    previous_annotation.reset();
 
     for (auto ext_it = iso_var_map.begin(); ext_it != iso_var_map.end(); ++ext_it){
         for (auto int_it = ext_it->second.begin(); int_it != ext_it->second.end(); ++int_it){
+            GffRecordPtr previous_annotation;
+            previous_annotation.reset();
             set <long>::iterator start_it = int_it->second.exon_starts.begin();
             set <long>::iterator stop_it = int_it->second.exon_ends.begin();
             for (int i = 0; i < int_it->second.exon_count; i++){

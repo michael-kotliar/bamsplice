@@ -329,7 +329,6 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                             // pointer to a current bam record
                             for (auto gff_it = map_iterator->second.begin(); gff_it != map_iterator->second.end(); ++gff_it) {
                                 BamRecordPtr bam_record_to_put_in_array = current_bam_record; // put it just in case. should be the same as just push original pointer to array, 'cos push copies
-                                gff_it->annotation->bam_records.push_back(bam_record_to_put_in_array);
                                 gff_it->annotation->reads_count++;
                                 assert (gff_it->annotation.use_count() > 0);
                                 assert (bam_record_to_put_in_array.use_count() > 0);
