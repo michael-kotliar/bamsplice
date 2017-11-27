@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(geep)
 
 set( EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin" )
-find_package(Boost 1.60.0 COMPONENTS system filesystem thread REQUIRED)
+find_package(Boost COMPONENTS system filesystem thread REQUIRED)
 
 add_subdirectory(./3rd_party/bamtools)
 include_directories(${Boost_INCLUDE_DIRS})
