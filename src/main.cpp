@@ -28,8 +28,8 @@ using namespace BamTools;
 
 bool verify_params (cxxopts::Options params){
     // check mandatorary parameters
-    if (!params.count("bam") || !params.count("annotation") || !params.count("output")){
-        cerr << "You should set --bam, --annotation, --output parameters" << endl;
+    if (!params.count("bam") || !params.count("annotation")){
+        cerr << "You should set --bam and --annotation parameters" << endl;
         return false;
     }
 
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
              "Set the path to the GTF or TAB-delimited file")
             ("l,log", "path to the LOG file", cxxopts::value<std::string>()->default_value("/dev/null"),
              "Set the path to save LOG file")
-            ("o,output", "prefix for the output files", cxxopts::value<std::string>(),
+            ("o,output", "prefix for the output files", cxxopts::value<std::string>()->default_value(""),
              "Set the prefix to save output files")
             ("t,threshold", "RPKM threshold", cxxopts::value<double>()->default_value("0"),
              "Set rpkm cutoff threshold, below which everything will be changed to value set with --cutoff")
