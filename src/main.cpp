@@ -43,6 +43,7 @@ bool verify_params (cxxopts::Options params){
         cerr << "  cutoff: " << params["cutoff"].as<double>() << endl;
         cerr << "  minIntLen: " << params["minIntLen"].as<int>() << endl;
         cerr << "  minReadLen: " << params["minReadLen"].as<int>() << endl;
+        cerr << "  exclude: " << params["exclude"].as<std::string>() << endl;
         cerr << "  threads: " << params["threads"].as<int>() << endl;
         cerr << "  keepUnique: " << params["keepUnique"].as<bool>() << endl;
         cerr << "  dutp: " << params["dutp"].as<bool>() << endl;
@@ -91,6 +92,10 @@ int main(int argc, char **argv) {
              "Set rpkm cutoff threshold, below which everything will be changed to value set with --cutoff ")
             ("c,cutoff", "RPKM cutoff value", cxxopts::value<double>()->default_value("0"),
              "Set rpkm cutoff value to be used for all rpkms below --threshold")
+
+            ("x,exclude", "Ignore chromosome list", cxxopts::value<std::string>()->default_value(""),
+             "Coma separated list of chromosomes to be ignored")
+
             ("i,minIntLen", "minimal interval length", cxxopts::value<int>()->default_value("0"),
              "Set the minimal interval length. All shorter intervals will be discarded")
             ("r,minReadLen", "minimal read length", cxxopts::value<int>()->default_value("0"),
@@ -157,9 +162,10 @@ int main(int argc, char **argv) {
 
     // map to save <chromosome name, <isoform name, correspondent Isoform object> >
     std::map <string, std::map <string, Isoform> > iso_var_map;
-    if (not load_annotation (params["annotation"].as<std::string>(), global_annotation_map_ptr, iso_var_map)){
+    if (not load_annotation (params["annotation"].as<std::string>(), params["exclude"].as<std::string>(), global_annotation_map_ptr, iso_var_map)){
         return 0;
     }
+
 //    cout << endl;
 //    print_iso_var_map (iso_var_map); // for DEBUG only
 //    cout << endl;
