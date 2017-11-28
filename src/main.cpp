@@ -28,24 +28,34 @@ using namespace BamTools;
 
 bool verify_params (cxxopts::Options params){
     // check mandatorary parameters
-    if (!params.count("bam") || !params.count("gtf") || !params.count("output")){
-        cerr << "You should set --bam, --gtf, --output parameters" << endl;
+    if (!params.count("bam") || !params.count("annotation") || !params.count("output")){
+        cerr << "You should set --bam, --annotation, --output parameters" << endl;
         return false;
     }
 
     try { // It will never fail, because we already checked it on the parameters parsing step
         cerr << "Parameters: " << endl;
         cerr << "  bam: " << params["bam"].as<std::string>() << endl;
-        cerr << "  gtf: " << params["gtf"].as<std::string>() << endl;
+        cerr << "  annotation: " << params["annotation"].as<std::string>() << endl;
         cerr << "  log: " << params["log"].as<std::string>() << endl;
         cerr << "  output: " << params["output"].as<std::string>() << endl;
+        cerr << "  threshold: " << params["threshold"].as<double>() << endl;
+        cerr << "  cutoff: " << params["cutoff"].as<double>() << endl;
         cerr << "  minIntLen: " << params["minIntLen"].as<int>() << endl;
         cerr << "  minReadLen: " << params["minReadLen"].as<int>() << endl;
-        cerr << "  threadNumber: " << params["threadNumber"].as<int>() << endl;
+        cerr << "  threads: " << params["threads"].as<int>() << endl;
         cerr << "  keepUnique: " << params["keepUnique"].as<bool>() << endl;
         cerr << "  dutp: " << params["dutp"].as<bool>() << endl;
     } catch (...){
         cerr << "Some of the parameters have a mistake" << endl;
+        return false;
+    }
+    if (params["threshold"].as<double>() < 0){
+        cerr << "threshold cannot be less than 0" << endl;
+        return false;
+    }
+    if (params["cutoff"].as<double>() < 0){
+        cerr << "cutoff cannot be less than 0" << endl;
         return false;
     }
     if (params["minIntLen"].as<int>() < 0){
@@ -71,17 +81,21 @@ int main(int argc, char **argv) {
     params.add_options()
             ("b,bam", "path to the BAM file", cxxopts::value<std::string>(),
              "Set the path to the BAM file")
-            ("g,gtf", "path to the GTF file", cxxopts::value<std::string>(),
+            ("g,annotation", "path to the GTF or TAB-delimited annotation file", cxxopts::value<std::string>(),
              "Set the path to the GTF or TAB-delimited file")
             ("l,log", "path to the LOG file", cxxopts::value<std::string>()->default_value("/dev/null"),
              "Set the path to save LOG file")
-            ("o,output", "prefis for the output files", cxxopts::value<std::string>(),
+            ("o,output", "prefix for the output files", cxxopts::value<std::string>(),
              "Set the prefix to save output files")
+            ("t,threshold", "RPKM threshold", cxxopts::value<double>()->default_value("0"),
+             "Set rpkm cutoff threshold, below which everything will be changed to value set with --cutoff ")
+            ("c,cutoff", "RPKM cutoff value", cxxopts::value<double>()->default_value("0"),
+             "Set rpkm cutoff value to be used for all rpkms below --threshold")
             ("i,minIntLen", "minimal interval length", cxxopts::value<int>()->default_value("0"),
              "Set the minimal interval length. All shorter intervals will be discarded")
             ("r,minReadLen", "minimal read length", cxxopts::value<int>()->default_value("0"),
              "Set the minimal read length. All parts of spliced reads that intersect with exon in less than minReadLen nucleotides will be discarded")
-            ("p,threadNumber", "number of threads", cxxopts::value<int>()->default_value("1"),
+            ("p,threads", "number of threads", cxxopts::value<int>()->default_value("1"),
              "Set the number of threads")
             ("u,keepUnique", "flag to fix unique reads for the specific isoromf interval", cxxopts::value<bool>(),
              "Set this flag if you want prevent distributing the isoform unique reads among other isoforms")
@@ -143,7 +157,7 @@ int main(int argc, char **argv) {
 
     // map to save <chromosome name, <isoform name, correspondent Isoform object> >
     std::map <string, std::map <string, Isoform> > iso_var_map;
-    if (not load_annotation (params["gtf"].as<std::string>(), global_annotation_map_ptr, iso_var_map)){
+    if (not load_annotation (params["annotation"].as<std::string>(), global_annotation_map_ptr, iso_var_map)){
         return 0;
     }
 //    cout << endl;
@@ -198,12 +212,12 @@ int main(int argc, char **argv) {
         }
     }
 
-    int in_each_thread = (int) floor ((double)intersection_array.size() / fmin(params["threadNumber"].as<int>(), intersection_array.size()));
+    int in_each_thread = (int) floor ((double)intersection_array.size() / fmin(params["threads"].as<int>(), intersection_array.size()));
     cerr << "on each thread: " << in_each_thread << endl;
 
     boost::thread_group process_threads;
 
-    for (int t = 0; t < fmin (params["threadNumber"].as<int>(), intersection_array.size()); t++){
+    for (int t = 0; t < fmin (params["threads"].as<int>(), intersection_array.size()); t++){
 //        cerr << "Adding new thread" << endl;
 //
 //        vector < std::map <string, multimap <long, GffRecordPtr> >::iterator >::iterator start_subvector = intersection_array.begin() + t * in_each_thread;
@@ -224,7 +238,7 @@ int main(int argc, char **argv) {
             while ( stop_subvector != (t+1)*in_each_thread && stop_subvector != intersection_array.size()){
                 ++stop_subvector;
             }
-            if (t == fmin (params["threadNumber"].as<int>(), intersection_array.size()) - 1 ){
+            if (t == fmin (params["threads"].as<int>(), intersection_array.size()) - 1 ){
                 stop_subvector = intersection_array.size();
             }
             vector < std::map <string, multimap <long, GffRecordPtr> >::iterator > chrom_vector;
@@ -295,6 +309,7 @@ int main(int argc, char **argv) {
     cerr << "Calculate rpkm" << endl;
 
     calculate_rpkm (iso_var_map, bam_general_info.aligned);
+    adjust_threshold (iso_var_map, params["threshold"].as<double>(), params["cutoff"].as<double>(), bam_general_info.aligned);
     print_iso_var_map (iso_var_map);
 
 
