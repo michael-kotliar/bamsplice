@@ -66,8 +66,8 @@ bool verify_params (cxxopts::Options params){
         cerr << "minReadLen cannot be less than 0" << endl;
         return false;
     }
-    if (params["threadNumber"].as<int>() < 1){
-        cerr << "threadNumber cannot be less than 1" << endl;
+    if (params["threads"].as<int>() < 1){
+        cerr << "threads cannot be less than 1" << endl;
         return false;
     }
     return true;
