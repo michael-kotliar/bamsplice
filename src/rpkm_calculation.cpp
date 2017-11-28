@@ -240,14 +240,14 @@ void calculate_totReads_density (const vector<vector<double> > & weight_array, s
     boost::mutex::scoped_lock scoped_lock(iso_var_map_mutex);
     for (auto corr_map_it = correspondence_map.begin(); corr_map_it != correspondence_map.end(); ++corr_map_it) {
         double density = 0;
-        double total_reads = 0;
+        int total_reads = 0;
         for (int j = 0; j < weight_array[corr_map_it->second].size(); j++){
             density += weight_array[corr_map_it->second][j] * weight_array[0][j];
         }
         total_reads = (int)density;
 
         iso_map[corr_map_it->first].total_reads = total_reads;
-        iso_map[corr_map_it->first].density = 1000 * total_reads / (double) iso_map[corr_map_it->first].length;
+        iso_map[corr_map_it->first].density = 1000 * (double) total_reads / (double) iso_map[corr_map_it->first].length;
         iso_map[corr_map_it->first].cycles = cycles;
         iso_map[corr_map_it->first].bin_id = bin_id;
         iso_map[corr_map_it->first].index = corr_map_it->second;
@@ -262,6 +262,18 @@ void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_ma
     for (auto chrom_it = iso_var_map.begin(); chrom_it != iso_var_map.end(); ++chrom_it) {
         for (auto iso_it = chrom_it->second.begin(); iso_it !=  chrom_it->second.end(); ++iso_it) {
             iso_it->second.rpkm = iso_it->second.density / ( (double)aligned / (double)1000000 );
+        }
+    }
+}
+
+void adjust_threshold (std::map <string, std::map <string, Isoform> > & iso_var_map, const double threshold, const double cutoff, const long & aligned) {
+    for (auto chrom_it = iso_var_map.begin(); chrom_it != iso_var_map.end(); ++chrom_it) {
+        for (auto iso_it = chrom_it->second.begin(); iso_it !=  chrom_it->second.end(); ++iso_it) {
+            if (iso_it->second.rpkm < threshold){
+                iso_it->second.rpkm = cutoff;
+                iso_it->second.density = (double)aligned * cutoff / (double)1000000;
+                iso_it->second.total_reads = (int)(iso_it->second.density * (double) iso_it->second.length / 1000);
+            }
         }
     }
 }

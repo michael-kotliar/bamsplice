@@ -40,3 +40,4 @@ void subtract_matrix (vector <vector <double> > & first, const vector <vector <d
 void calculate_totReads_density (const vector<vector<double> > & weight_array, std::map <string, Isoform> & iso_map,
                                  const std::map <string, int> & correspondence_map, int cycles = 0, string bin_id = ".");
 void calculate_rpkm (std::map <string, std::map <string, Isoform> > & iso_var_map, const long & aligned);
+void adjust_threshold (std::map <string, std::map <string, Isoform> > & iso_var_map, const double threshold, const double cutoff, const long & aligned);
