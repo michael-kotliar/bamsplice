@@ -89,13 +89,11 @@ int main(int argc, char **argv) {
             ("o,output", "prefix for the output files", cxxopts::value<std::string>(),
              "Set the prefix to save output files")
             ("t,threshold", "RPKM threshold", cxxopts::value<double>()->default_value("0"),
-             "Set rpkm cutoff threshold, below which everything will be changed to value set with --cutoff ")
+             "Set rpkm cutoff threshold, below which everything will be changed to value set with --cutoff")
             ("c,cutoff", "RPKM cutoff value", cxxopts::value<double>()->default_value("0"),
              "Set rpkm cutoff value to be used for all rpkms below --threshold")
-
             ("x,exclude", "Ignore chromosome list", cxxopts::value<std::string>()->default_value(""),
              "Coma separated list of chromosomes to be ignored")
-
             ("i,minIntLen", "minimal interval length", cxxopts::value<int>()->default_value("0"),
              "Set the minimal interval length. All shorter intervals will be discarded")
             ("r,minReadLen", "minimal read length", cxxopts::value<int>()->default_value("0"),
