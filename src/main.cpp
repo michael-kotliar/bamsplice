@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
     }
 
     int in_each_thread = (int) floor ((double)intersection_array.size() / fmin(params["threads"].as<int>(), intersection_array.size()));
-    cerr << "on each thread: " << in_each_thread << endl;
+    cerr << "on each thread: " << in_each_thread << " chromosomes" << endl;
 
     boost::thread_group process_threads;
 
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
                 chrom_vector.push_back(intersection_array[j]);
             }
             for (int j = 0; j < chrom_vector.size(); j++){
-                cerr << start_subvector + j << ". " << chrom_vector[j]->first << endl;
+                cerr << "  " << chrom_vector[j]->first << endl;
             }
             process_threads.add_thread(new boost::thread(process,
                                                          chrom_vector,

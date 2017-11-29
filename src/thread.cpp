@@ -40,7 +40,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
     cerr << "[" << thread_number << "] " << "Run thread for chromosomes: " << endl;
     for (int i = 0; i < chrom_vector.size(); i++){
-        cerr << "[" << thread_number << "] " << chrom_vector[i]->first << ", ";
+        cerr << "  " << chrom_vector[i]->first << endl;
     }
     cerr << endl;
     BamReader bam_reader;
@@ -168,7 +168,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
             std::map<string, set<GffAndStartStopIt> > iso_map; // map to arrange exons according to the isoform key
             BamRecord previous_bam_record; // temporal bam record to detect the moment when next bam record isn't a part of big scpliced read
 
-            cerr << "[" << thread_number << "] " << "Processing reads" << endl;
+//            cerr << "[" << thread_number << "] " << "Processing reads" << endl;
             while (get_bam_record(bam_reader, current_bam_record, min_read_segment_length, dUTP, freeze)) { // Check if I can get new record from BAM file
                 // Check if gtf records array is already empty. Break the while loop
                 if (current_gtf_records_splitted_it == gtf_records_splitted.end()) {
@@ -217,7 +217,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                             freeze = false;
                             continue;
                         } else {
-                            cerr << endl << "[" << thread_number << "] " << "reached the end of interval map" << endl;
+                            cout << endl << "[" << thread_number << "] " << "reached the end of interval map" << endl;
                             // need to put last read back, because it could be from the next submatrix and we don't want to loose it.
                             // If it was part of the spliced read - don't care, skip it
                             if (current_bam_record->slices == 1){
@@ -399,11 +399,11 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
             //        print_isoform_by_name (weight_array, iso_var_map, "chr10", "NM_001198798", cout);
 
-            cerr << "[" << thread_number << "] " << "Started to run cycles" << endl;
+//            cerr << "[" << thread_number << "] " << "Started to run cycles" << endl;
             double res_sum;
             int cycles = run_cycle(weight_array, res_sum, unique_weight_array, keep_unique);
-            cerr << "[" << thread_number << "] " << "Finished to run cycles : " << cycles << endl;
-            cerr << "[" << thread_number << "] " << "Result sum : " << res_sum << endl;
+//            cerr << "[" << thread_number << "] " << "Finished to run cycles : " << cycles << endl;
+//            cerr << "[" << thread_number << "] " << "Result sum : " << res_sum << endl;
             print_weight_array(weight_array, correspondence_map, min_weight, "Final density array");
             cout << endl;
             stringstream ss;

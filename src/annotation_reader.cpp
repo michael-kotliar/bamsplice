@@ -61,11 +61,11 @@ void Isoform::print (){
 //    cout << "exon_frames.size(): " << exon_frames.size() << endl;
     cout << "Exons starts:" << endl;
     for (auto it = exon_starts.begin(); it != exon_starts.end(); ++it){
-        cerr << *it << endl;
+        cout << *it << endl;
     }
     cout << "Exons ends:" << endl;
     for (auto it = exon_ends.begin(); it != exon_ends.end(); ++it){
-        cerr << *it << endl;
+        cout << *it << endl;
     }
 //    for (int i = 0; i < exon_count; i++){
 //        cout << "  " << i << ") " << "[" << exon_starts[i] << ", "<< exon_ends[i] << "] - " << endl;
@@ -515,7 +515,7 @@ bool load_annotation (const string & full_path_name,
                             // Out isoform name already have _dup suffix, so we need to update only the number after _dup
                             current_isoform.name = current_isoform.name.substr(0, dup_pos) + "_dup" + to_string(i);
                         }
-                        cerr << "Duplicate isoform name. Name is updated to " << current_isoform.name << endl;
+                        cout << "Duplicate isoform name. Name is updated to " << current_isoform.name << endl;
                         internal_pair_for_iso_var_map.first = current_isoform.name;
                         internal_pair_for_iso_var_map.second = current_isoform;
                         continue;
