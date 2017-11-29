@@ -30,3 +30,8 @@ add_executable(geep ${SOURCE_FILES})
 add_dependencies (geep BamTools)
 target_link_libraries(geep ${Boost_LIBRARIES} bamtools)
 
+
+set(CMAKE_INSTALL_PREFIX "/usr/local")
+
+install(TARGETS geep
+        RUNTIME DESTINATION bin)
