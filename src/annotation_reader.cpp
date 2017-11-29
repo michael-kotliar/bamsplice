@@ -484,7 +484,7 @@ bool load_annotation (const string & full_path_name,
             continue;
         }
 
-        if (std::find(exclude_chr.begin(), exclude_chr.end(), current_isoform.chrom) != exclude_chr.end()){
+        if (std::find(exclude_chr.begin(), exclude_chr.end(),  boost::to_lower_copy(current_isoform.chrom)) != exclude_chr.end()){
             cout << "Skip chromosome [" << current_isoform.chrom << "]" << endl;
             continue;
         }
