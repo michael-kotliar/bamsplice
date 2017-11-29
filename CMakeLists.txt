@@ -30,3 +30,5 @@ add_executable(geep ${SOURCE_FILES})
 add_dependencies (geep BamTools)
 target_link_libraries(geep ${Boost_LIBRARIES} bamtools)
 
+install(TARGETS geep
+        RUNTIME DESTINATION bin)
