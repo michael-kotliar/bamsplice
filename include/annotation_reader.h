@@ -116,8 +116,9 @@ std::map <string, std::map <string, Isoform> > group_by_gene (const std::map <st
 
 // global_annotation_map_ptr : key - chromosome name, value - multimap of annotations, sorted by not-unique key - start pose of annotation
 // NOTE : forward list of annotations should be sorted by start pose with rule a<b
+// NOTE : load_annotation function skip all the chromosomes, which are not present in chromosome_info_map (not present in BAM file)
 bool load_annotation (const string & full_path_name,
-                      const string & exclude_chr_coma_sep_list,
+                      const std::map <string, pair <int, int> > & chromosome_info_map,
                       std::map <string, multimap <long, GffRecordPtr> > & global_annotation_map_ptr,
                       std::map <string, std::map <string, Isoform> > & iso_var_map);
 

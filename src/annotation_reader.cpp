@@ -443,21 +443,15 @@ bool is_duplicate (const Isoform & original_isoform, const Isoform & new_isoform
 
 // global_annotation_map_ptr : key - chromosome name, value - multimap of annotations, sorted by not-unique key - start pose of annotation
 // NOTE : forward list of annotations should be sorted by start pose with rule a<b
+// NOTE : load_annotation function skip all the chromosomes, which are not present in chromosome_info_map (not present in BAM file)
 bool load_annotation (const string & full_path_name,
-                      const string & exclude_chr_coma_sep_list,
+                      const std::map <string, pair <int, int> > & chromosome_info_map,
                       std::map <string, multimap <long, GffRecordPtr> > & global_annotation_map_ptr,
                       std::map <string, std::map <string, Isoform> > & iso_var_map){
     ifstream input_stream (full_path_name);
     if (!input_stream) {
         cout << "Cannot open file " << full_path_name << endl;
         return false;
-    }
-
-    vector<string> exclude_chr;
-    try {
-        exclude_chr = split_line( boost::to_lower_copy(exclude_chr_coma_sep_list), "," );
-    } catch (...){
-        cerr << "Cannot interpret exclude chromosome list [" << exclude_chr_coma_sep_list << "]. Set to default empty value" << endl;
     }
 
     // check if annotation input is in gtf format
@@ -484,8 +478,8 @@ bool load_annotation (const string & full_path_name,
             continue;
         }
 
-        if (std::find(exclude_chr.begin(), exclude_chr.end(),  boost::to_lower_copy(current_isoform.chrom)) != exclude_chr.end()){
-            cout << "Skip chromosome [" << current_isoform.chrom << "]" << endl;
+        if ( chromosome_info_map.count(current_isoform.chrom) != 1 ){
+//            cout << "Skip excluded chromosome [" << current_isoform.chrom << "]" << endl;
             continue;
         }
 

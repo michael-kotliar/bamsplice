@@ -101,50 +101,24 @@ list <BamRecordPtr> split_to_single_reads (const BamAlignment & current_alignmen
     return single_read_array;
 }
 
-bool flag_check (BamAlignment & al, BamGeneralInfo & bam_general_info, bool dUTP){
-    bam_general_info.total++;
-    if( al.IsMapped() && al.IsPrimaryAlignment() && (!al.IsDuplicate()) ) {
-        if (al.IsPaired()){
-            if(al.IsProperPair() && al.IsMateMapped() ) {
-                // The only possible situation when it may happen is when read was mapped on the wrong strand
-                if( (!(al.IsReverseStrand() ^ al.IsMateReverseStrand())           ) ||  // both mates came from the same strand. it shouldn't be like this
-                    ( (al.Position < al.MatePosition) && al.IsReverseStrand()     ) ||
-                    ( (al.MatePosition < al.Position) && al.IsMateReverseStrand() )
-                        ) {
-                    bam_general_info.not_aligned++;
-                    return false;
-                }
-
-//              // It looks like when we use DUTP we count strand only for the first mate in pair
-//              // we artificially change the strand of second mate pair to be equal the strand of main mate in a pair
-//              // TODO Think if we really should do like this?
-//              // TODO Do we need to check any other conditions?
-                if (dUTP){
-                    if(al.IsMateMapped() && al.IsSecondMate()) {
-                        if(al.IsReverseStrand()) {
-                            al.SetIsReverseStrand(false);
-                        } else {
-                            al.SetIsReverseStrand(true);
-                        }
-                    }
-                }
-            } else {
-                bam_general_info.not_aligned++;
-                return false;
-            }
-        }
-    } else {
-        bam_general_info.not_aligned++;
+bool flag_check (BamAlignment & al, bool dUTP){
+    if (!al.IsMapped() || !al.IsPrimaryAlignment() || al.IsDuplicate()){
         return false;
+    }
+    if (al.IsPaired() && (!al.IsProperPair() || !al.IsMateMapped()) ){
+        return false;
+    }
+  // TODO Think if we really should do like this?
+  // TODO check if it switch it back when is called twice
+    if (dUTP && al.IsPaired() && al.IsSecondMate()){
+        if(al.IsReverseStrand()) {
+            al.SetIsReverseStrand(false);
+        } else {
+            al.SetIsReverseStrand(true);
+        }
     }
     return true;
 }
-
-bool flag_check (BamAlignment & al, bool dUTP){
-    BamGeneralInfo bam_general_info;
-    return flag_check (al, bam_general_info, dUTP);
-}
-
 
 
 void put_bam_record_back (BamRecordPtr bam_record){
@@ -160,7 +134,7 @@ void reset_saved_reads (){
     saved_reads_tls.reset( new list <BamRecordPtr> );
 }
 
-// Gets the new read fro the BAM file through BamReader object
+// Gets the new read from the BAM file through BamReader object
 bool get_bam_record (BamReader & bam_reader, BamRecordPtr & bam_record, int min_read_segment_length, bool dUTP, bool freeze){
 
     if( ! saved_reads_tls.get() ) {
@@ -205,12 +179,17 @@ void print_ref_info (const std::map <string, pair <int, int> > & info_map){
 }
 
 
-std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & reader){
+std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & reader, const vector<string> & exclude_chr){
     std::map <string, pair <int, int> > output_map;
     RefVector ref_data_vector = reader.GetReferenceData();
     for (int i = 0; i < ref_data_vector.size(); i++ ){
         RefData current_ref_data = ref_data_vector[i];
         string chrom_name = current_ref_data.RefName;
+        if (std::find(exclude_chr.begin(), exclude_chr.end(), boost::to_lower_copy(chrom_name)) != exclude_chr.end()){
+            cerr << "Skip excluded chromosome [" << chrom_name << "]" << endl;
+            continue;
+        }
+
         int ref_id = reader.GetReferenceID(chrom_name);
         if (ref_id == -1){
             throw ("BUG: it shouldn't be like this");
@@ -250,55 +229,61 @@ bool make_index (BamReader & bam_reader){
 
 
 
+//
+//bool load_from_file (const string & full_filename, BamGeneralInfo & bam_general_info){
+//    BamGeneralInfo new_info;
+//    ifstream input_stream (full_filename);
+//    if (!input_stream) {
+//        cerr << "Cannot open file " << full_filename << endl;
+//        return false;
+//    }
+//    string line;
+//    while (getline(input_stream, line)) {
+//        if (include_key(line, "Number of input reads")){
+//            if (not str_to_long(new_info.total, split_line(line)[1]) ){
+//                return false;
+//            }
+//        }
+//        if (include_key(line, "Uniquely mapped reads number")){
+//            if (not str_to_long(new_info.aligned, split_line(line)[1]) ){
+//                return false;
+//            }
+//        }
+//    }
+//    if (new_info.total == 0 || new_info.aligned == 0){
+//        return false;
+//    }
+//    new_info.not_aligned = new_info.total - new_info.aligned;
+//    bam_general_info = new_info;
+//    return true;
+//}
 
-bool load_from_file (const string & full_filename, BamGeneralInfo & bam_general_info){
-    BamGeneralInfo new_info;
-    ifstream input_stream (full_filename);
-    if (!input_stream) {
-        cerr << "Cannot open file " << full_filename << endl;
-        return false;
-    }
-    string line;
-    while (getline(input_stream, line)) {
-        if (include_key(line, "Number of input reads")){
-            if (not str_to_long(new_info.total, split_line(line)[1]) ){
-                return false;
-            }
-        }
-        if (include_key(line, "Uniquely mapped reads number")){
-            if (not str_to_long(new_info.aligned, split_line(line)[1]) ){
-                return false;
-            }
-        }
-    }
-    if (new_info.total == 0 || new_info.aligned == 0){
-        return false;
-    }
-    new_info.not_aligned = new_info.total - new_info.aligned;
-    bam_general_info = new_info;
-    return true;
-}
 
-
-void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info){
-    // check if we can get it from the STAR output Log.final.out in the same folder.
-    // If not - iterate over the file
-    string log_filename_sufix = "Log.final.out";   // TODO put it as parameter
-    string bam_filename (bam_reader.GetFilename(), bam_reader.GetFilename().find_last_of('/')+1);
-    string bam_wo_ext (bam_filename, 0, bam_filename.find_last_of('.')+1);
-    string path (bam_reader.GetFilename(), 0,  bam_reader.GetFilename().find_last_of('/')+1);
-    string full_log_filename = path + bam_wo_ext + log_filename_sufix;
-    if (not load_from_file (full_log_filename, bam_general_info)){
-        cerr << "Couldn't find any file with mapping statistics. Calculating ..." << endl;
-        BamAlignment al;
-        while (bam_reader.GetNextAlignment(al)){
-            flag_check (al, bam_general_info, false);
-        }
-        bam_general_info.aligned = bam_general_info.total - bam_general_info.not_aligned;
-        bam_reader.Rewind();
+void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info, const std::map <string, pair <int, int> > & chromosome_info_map){
+    // Refactore chromosome_info_map to allow easy search by RefIf
+    std::map <int, string> allowed_chr_ids; // < RefID, chromosome name >
+    for (auto it = chromosome_info_map.begin(); it != chromosome_info_map.end(); ++it){
+        allowed_chr_ids[it->second.first] = it->first;
     }
+
+    cerr << "Calculating mapping statistics" << endl;
+    BamAlignment al;
+    while (bam_reader.GetNextAlignment(al)){
+        bam_general_info.total++;
+        if ( allowed_chr_ids.count(al.RefID) != 1){
+            bam_general_info.excluded++;
+            continue;
+        }
+        if (not flag_check (al, false)){
+            bam_general_info.not_aligned++;
+        };
+    }
+    bam_general_info.aligned = bam_general_info.total - bam_general_info.not_aligned - bam_general_info.excluded;
+    bam_reader.Rewind();
+
     cerr << "BAM alignment statistics:" << endl;
     cerr << "   Total: " << bam_general_info.total << endl;
+    cerr << "   Excluded: " << bam_general_info.excluded << endl;
     cerr << "   Aligned: " << bam_general_info.aligned << endl;
     cerr << "   Not aligned: " << bam_general_info.not_aligned << endl;
 }

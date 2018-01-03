@@ -134,11 +134,21 @@ int main(int argc, char **argv) {
         return 0;
     } else cerr << "Open " << bam_reader.GetFilename() << endl;
 
+
+    // Get a vector of chromosomes to exclude from calculation
+    vector<string> exclude_chr;
+    try {
+        exclude_chr = split_line( boost::to_lower_copy(params["exclude"].as<std::string>()), "," );
+    } catch (...){
+        cerr << "Cannot interpret exclude chromosome list [" << params["exclude"].as<std::string>() << "]. Set to default empty value" << endl;
+    }
+
     // key - chromosome name, value - <RefId, Length> for corresponding chromosome from the BAM file
     // chromosome_info_map - saves correspondence between chromosome name and RefId from the BamReader object
-    std::map <string, pair <int, int> > chromosome_info_map = get_chromosome_map_info (bam_reader);
+    // chromosome_info_map doesn't include excluded chromosomes
+    std::map <string, pair <int, int> > chromosome_info_map = get_chromosome_map_info (bam_reader, exclude_chr);
 
-//        print_ref_info (chromosome_info_map); // Only for DEBUG
+//  print_ref_info (chromosome_info_map); // Only for DEBUG
 
     // Check if current bam file is indexed (and that index data is loaded into program)
     if (not make_index(bam_reader)){
@@ -148,9 +158,8 @@ int main(int argc, char **argv) {
     cerr << "Gathering info about bam file" << endl;
     BamGeneralInfo bam_general_info;
     // Need to run through the whole bam file, because when we align reads according to exons, we can skip some of its parts
-    get_bam_info (bam_reader, bam_general_info);
+    get_bam_info (bam_reader, bam_general_info, chromosome_info_map);
     bam_reader.Close();
-
 
     // read from tab delimited file
     // map < chromosome_key, multimap < exon_start_pose, exon_pointer> >
@@ -160,7 +169,7 @@ int main(int argc, char **argv) {
 
     // map to save <chromosome name, <isoform name, correspondent Isoform object> >
     std::map <string, std::map <string, Isoform> > iso_var_map;
-    if (not load_annotation (params["annotation"].as<std::string>(), params["exclude"].as<std::string>(), global_annotation_map_ptr, iso_var_map)){
+    if (not load_annotation (params["annotation"].as<std::string>(), chromosome_info_map, global_annotation_map_ptr, iso_var_map)){
         return 0;
     }
 

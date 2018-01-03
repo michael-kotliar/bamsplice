@@ -36,16 +36,19 @@ struct BamGeneralInfo {
     long total;
     long not_aligned;
     long aligned;
+    long excluded;
     BamGeneralInfo ():
             total (0),
             not_aligned (0),
-            aligned (0)
+            aligned (0),
+            excluded (0)
     {
     }
     void operator = (const BamGeneralInfo &other ) {
         total = other.total;
         not_aligned = other.not_aligned;
         aligned = other.aligned;
+        excluded = other.excluded;
     }
 };
 
@@ -93,12 +96,11 @@ void reset_saved_reads ();
 
 void print_ref_info (const std::map <string, pair <int, int> > & info_map);
 
-std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & reader);
+std::map <string, pair <int, int> > get_chromosome_map_info (const BamReader & reader, const vector<string> & exclude_chr);
 
 bool make_index (BamReader & bam_reader);
-bool flag_check (BamAlignment & al, BamGeneralInfo & bam_general_info, bool dUTP);
 bool flag_check (BamAlignment & al, bool dUTP);
-void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info);
+void get_bam_info(BamReader & bam_reader, BamGeneralInfo & bam_general_info, const std::map <string, pair <int, int> > & chromosome_info_map);
 
 
 
