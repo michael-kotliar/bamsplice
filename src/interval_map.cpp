@@ -14,17 +14,20 @@ bool find_start_segment_annotation (BamRecordPtr current_bam_record, BamRecord p
     assert (current_bam_record.use_count() > 0);
     if (current_bam_record->read_id == previous_bam_record.read_id and *allow_skip_rest){
         freeze = false;
+        cout << "           MOVE BAM" << endl;
         return false;
     }
 
     if (current_bam_record->start_pose < current_gtf_records_splitted_it->first.lower()) {
         freeze = false; // Set freeze to false to change current_bam_record
         allow_skip_rest.reset (new bool(true));
+        cout << "           MOVE BAM" << endl;
         return false;
     }
     allow_skip_rest.reset (new bool(false));
     if (current_bam_record->start_pose >= current_gtf_records_splitted_it->first.upper()) {
         current_gtf_records_splitted_it++;
+        cout << "           MOVE GTF" << endl;
         freeze = true; // Set freeze to true to prevent changing current_bam_record
         return false;
     }

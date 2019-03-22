@@ -178,12 +178,6 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
                 assert (current_bam_record.use_count() > 0);
 
-                // FOR DEBUG USE ONLY
-                //            cout << endl << "Process read " << current_bam_record->read_id << " [" <<
-                //            current_bam_record->start_pose << "," <<
-                //            current_bam_record->end_pose << "] - " <<
-                //            current_bam_record->slices << " parts" << endl;
-
                 // get the number of parts from current bam record
                 slice_number = current_bam_record->slices;
 
@@ -198,13 +192,23 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                     current_slice = 0;
                     iso_map.clear();
                     backup_current_gtf_records_splitted_it = current_gtf_records_splitted_it; // update the backup for gff iterator
-//                cout << "iso_map is cleared because of the new read" << endl;
+                    cout << "GOT NEW READ: [" 
+                         << current_bam_record->start_pose << ", "
+                         << current_bam_record->end_pose << "] - "
+                         << current_bam_record->read_id << " - "
+                         << current_bam_record->slices << " slice(s)" << endl;
                 }
 
                 // increment current_slice (position inside a spliced read)
                 if (not freeze) {
                     current_slice++;
                 }
+
+                cout << "   CURSOR COORDINATES:" << endl;
+                cout << "       BAM       - " << current_bam_record->start_pose << endl;
+                cout << "       GTF       - " << current_gtf_records_splitted_it->first.lower() << endl;
+                cout << "       READ_ID   - " << current_bam_record->read_id << endl;
+                cout << "       SLICE     - " << current_slice << endl;
 
                 // Find start segment annotation
                 // If false call get_bam_record again. freeze is true if we need to skip the read and false if we want to skip annotation
@@ -214,6 +218,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                         if (current_bam_record->slices > 1 && current_slice > 1) {
 //                        cerr << "Rewind current_gtf_records_splitted_it" << endl;
                             current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it;
+                            cout << "           REWIND GTF: failed to find start segment" << endl;
                             freeze = false;
                             continue;
                         } else {
@@ -230,6 +235,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                     }
                     if (current_slice == current_bam_record->slices && current_bam_record->slices > 1 && (not freeze)) {
                         current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it;
+                        cout << "           REWIND GTF: failed to find start segment" << endl;
                     }
                     continue;
                 }
@@ -242,8 +248,9 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                 // If false call get_bam_record with freeze = false ===> skip current bam record and get the next one
                 interval_map<long, MapElement>::iterator temp_gtf_records_splitted_it = current_gtf_records_splitted_it;
 
-                if (not find_stop_segment_annotation(current_bam_record, temp_gtf_records_splitted_it,
-                                                     gtf_records_splitted.end(), freeze)) {
+                if (not find_stop_segment_annotation(current_bam_record, temp_gtf_records_splitted_it, gtf_records_splitted.end(), freeze)) {
+                    current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it;
+                    cout << "           REWIND GTF: failed to find stop segment" << endl;
                     continue;
                 }
 
@@ -332,7 +339,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                                 gff_it->annotation->reads_count++;
                                 assert (gff_it->annotation.use_count() > 0);
                                 assert (bam_record_to_put_in_array.use_count() > 0);
-//                            cout << "   into annotation " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << bam_record_to_put_in_array->read_id << endl;
+                                cout << "   into exon " << gff_it->annotation->exon_id << " from " << gff_it->annotation->isoform_id << " added read " << bam_record_to_put_in_array->read_id << endl;
                                 // updated weight array
 //                                string isoform = gff_it->annotation->isoform_id;
 //                                int j = iso_var_map[chrom][isoform].index;
@@ -349,10 +356,10 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                                     throw ("Error: dividing by zero");
                                 }
                                 double weight = 1 / (global_koef * vertical_koef * (double) horizontal_koef);
-//                            cout << "global_koef = " << global_koef << endl;
-//                            cout << "vertical_koef = " << vertical_koef << endl;
-//                            cout << "horizontal_koef = " << horizontal_koef << endl;
-//                            cout << "weight = " << weight << endl;
+                                cout << "global_koef = " << global_koef << endl;
+                                cout << "vertical_koef = " << vertical_koef << endl;
+                                cout << "horizontal_koef = " << horizontal_koef << endl;
+                                cout << "weight = " << weight << endl;
                                 for (int i = start_i; i <= stop_i; i++) {
                                     weight_array[j][i] += weight;
                                 }
@@ -371,6 +378,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
                     // from its backup version
                     if (slice_number > 1) { // rewind iterator back only if it was spliced read
                         current_gtf_records_splitted_it = backup_current_gtf_records_splitted_it; // get iterator from the backup
+                        cout << "           REWIND GTF: after processing the sliced read" << endl;
                     }
                 }
                 // set freeze to false to get new read from the bam file when calling function get_bam_record
