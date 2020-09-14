@@ -34,6 +34,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
     int min_length = params["minIntLen"].as<int>();
     bool keep_unique = params["keepUnique"].as<bool>();
+    int max_cycles = params["cycles"].as<int>();
     int min_read_segment_length = params["minReadLen"].as<int>();;
     bool dUTP = params["dutp"].as<bool>();
     string bam_full_path_name = params["bam"].as<string>();
@@ -409,7 +410,7 @@ void process (   vector < std::map <string, multimap <long, GffRecordPtr> >::ite
 
 //            cerr << "[" << thread_number << "] " << "Started to run cycles" << endl;
             double res_sum;
-            int cycles = run_cycle(weight_array, res_sum, unique_weight_array, keep_unique);
+            int cycles = run_cycle(weight_array, res_sum, unique_weight_array, keep_unique, max_cycles);
 //            cerr << "[" << thread_number << "] " << "Finished to run cycles : " << cycles << endl;
 //            cerr << "[" << thread_number << "] " << "Result sum : " << res_sum << endl;
             print_weight_array(weight_array, correspondence_map, min_weight, "Final density array");

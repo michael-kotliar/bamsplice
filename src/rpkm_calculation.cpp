@@ -178,7 +178,7 @@ void subtract_matrix (vector <vector <double> > & first, const vector <vector <d
 }
 
 
-int run_cycle (vector <vector <double> > & density_array, double & res_sum, vector <vector <double> > & unique_density_array, bool keep_unique){
+int run_cycle (vector <vector <double> > & density_array, double & res_sum, vector <vector <double> > & unique_density_array, bool keep_unique, int max_cycles){
     double cutoff = 10e-9; // TODO put it in separate configuration file
     int cycles = 0;
     vector <vector <double> > tmp_matrix;
@@ -188,7 +188,7 @@ int run_cycle (vector <vector <double> > & density_array, double & res_sum, vect
 
 //    print_array (original_sum_dens, "Original density sums");
 
-    for (int i = 0; i < 2000; i++){
+    for (int i = 0; i < max_cycles; i++){
         // Update original density array with average values for isoforms
 //        cout << endl << "Set average by row" << endl;
         update_isoforms_density_to_average_for_isoform (density_array, unique_density_array, keep_unique);

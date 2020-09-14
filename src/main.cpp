@@ -46,6 +46,7 @@ bool verify_params (cxxopts::Options params){
         cerr << "  exclude: " << params["exclude"].as<std::string>() << endl;
         cerr << "  threads: " << params["threads"].as<int>() << endl;
         cerr << "  keepUnique: " << params["keepUnique"].as<bool>() << endl;
+        cerr << "  cycles: " << params["cycles"].as<int>() << endl;
         cerr << "  dutp: " << params["dutp"].as<bool>() << endl;
     } catch (...){
         cerr << "Some of the parameters have a mistake" << endl;
@@ -67,6 +68,10 @@ bool verify_params (cxxopts::Options params){
         cerr << "minReadLen cannot be less than 0" << endl;
         return false;
     }
+    if (params["cycles"].as<int>() < 0){
+        cerr << "cycles cannot be less than 0" << endl;
+        return false;
+    }    
     if (params["threads"].as<int>() < 1){
         cerr << "threads cannot be less than 1" << endl;
         return false;
@@ -102,6 +107,8 @@ int main(int argc, char **argv) {
              "Set the number of threads")
             ("u,keepUnique", "flag to fix unique reads for the specific isoromf interval", cxxopts::value<bool>(),
              "Set this flag if you want prevent distributing the isoform unique reads among other isoforms")
+            ("s,cycles", "Max cycles for read balancing", cxxopts::value<int>()->default_value("2000"),
+             "Set the maximum number of cycles used for read balancing")             
             ("d,dutp", "set dutp enabled", cxxopts::value<bool>(),
              "Set this dutp flag if strand specific analysys should be made");
 
