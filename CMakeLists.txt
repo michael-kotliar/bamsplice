@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(geep)
+project(bamsplice)
 
 set( EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin" )
 find_package(Boost COMPONENTS system filesystem thread REQUIRED)
@@ -26,9 +26,9 @@ set(SOURCE_FILES src/main.cpp
                  include/thread.h
                  include/cxxopts/cxxopts.hpp)
 
-add_executable(geep ${SOURCE_FILES})
-add_dependencies (geep BamTools)
-target_link_libraries(geep ${Boost_LIBRARIES} bamtools)
+add_executable(bamsplice ${SOURCE_FILES})
+add_dependencies (bamsplice BamTools)
+target_link_libraries(bamsplice ${Boost_LIBRARIES} bamtools)
 
-install(TARGETS geep
+install(TARGETS bamsplice
         RUNTIME DESTINATION bin)
